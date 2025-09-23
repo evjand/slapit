@@ -4,10 +4,37 @@ import { api } from '../../convex/_generated/api'
 import { toast } from 'sonner'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
+import { Card, CardHeader, CardContent } from './ui/card'
 import { SimpleUserAvatar } from './UserAvatar'
 import { Id } from '../../convex/_generated/dataModel'
-import { Camera, Upload, X, Image as ImageIcon } from 'lucide-react'
+import {
+  Camera,
+  Upload,
+  X,
+  Image as ImageIcon,
+  Trash2,
+  MoreHorizontal,
+  MoreVertical,
+} from 'lucide-react'
 import { CameraCapture } from './CameraCapture'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from './ui/alert-dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu'
 
 export function PlayerPool() {
   const players = useQuery(api.players.list) || []
@@ -15,6 +42,7 @@ export function PlayerPool() {
   const generateUploadUrl = useMutation(api.players.generateUploadUrl)
   const updatePlayerImage = useMutation(api.players.updatePlayerImage)
   const removePlayerImage = useMutation(api.players.removePlayerImage)
+  const deletePlayer = useMutation(api.players.deletePlayer)
 
   const [newPlayerName, setNewPlayerName] = useState('')
   const [isCreating, setIsCreating] = useState(false)
@@ -102,6 +130,23 @@ export function PlayerPool() {
     }
   }
 
+  const handleDeletePlayer = async (playerId: Id<'players'>) => {
+    try {
+      await deletePlayer({ playerId })
+      toast.success('Player deleted successfully!')
+    } catch (error) {
+      toast.error('Failed to delete player')
+    }
+  }
+
+  // Sort players by wins (descending) then total points (descending)
+  const sortedPlayers = [...players].sort((a, b) => {
+    if (a.totalWins !== b.totalWins) {
+      return b.totalWins - a.totalWins
+    }
+    return b.totalPoints - a.totalPoints
+  })
+
   return (
     <div className="space-y-6">
       {/* Camera Capture Modal */}
@@ -133,90 +178,130 @@ export function PlayerPool() {
           </div>
         </form>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {players.map((player) => (
-            <div key={player._id} className="rounded-lg border p-4">
-              <div className="mb-3 flex items-center space-x-3">
-                <div className="relative">
-                  <SimpleUserAvatar
-                    userId={player._id}
-                    size="md"
-                    imageStorageId={player.imageStorageId}
-                  />
-                  {uploadingPlayerId === player._id && (
-                    <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-4">
+          {sortedPlayers.map((player) => (
+            <Card key={player._id}>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="relative">
+                      <SimpleUserAvatar
+                        userId={player._id}
+                        size="md"
+                        imageStorageId={player.imageStorageId}
+                      />
+                      {uploadingPlayerId === player._id && (
+                        <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                        </div>
+                      )}
                     </div>
-                  )}
+                    <h3 className="text-foreground text-lg font-semibold">
+                      {player.name}
+                    </h3>
+                  </div>
+
+                  {/* Player actions dropdown */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleFileSelect(player._id, e)}
+                  />
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        disabled={uploadingPlayerId === player._id}
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploadingPlayerId === player._id}
+                      >
+                        <Upload className="mr-2 h-4 w-4" />
+                        Upload Image
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleOpenCamera(player._id)}
+                        disabled={uploadingPlayerId === player._id}
+                      >
+                        <Camera className="mr-2 h-4 w-4" />
+                        Take Photo
+                      </DropdownMenuItem>
+                      {player.imageStorageId && (
+                        <DropdownMenuItem
+                          onClick={() => handleRemoveImage(player._id)}
+                          disabled={uploadingPlayerId === player._id}
+                        >
+                          <X className="mr-2 h-4 w-4" />
+                          Remove Image
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuSeparator />
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <DropdownMenuItem
+                            onSelect={(e) => e.preventDefault()}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete Player
+                          </DropdownMenuItem>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Player</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete "{player.name}"?
+                              This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeletePlayer(player._id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
-                <h3 className="text-foreground font-semibold">{player.name}</h3>
-              </div>
+              </CardHeader>
 
-              {/* Image upload controls */}
-              <div className="mb-3 flex space-x-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => handleFileSelect(player._id, e)}
-                />
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploadingPlayerId === player._id}
-                  className="flex-1"
-                >
-                  <Upload className="mr-1 h-3 w-3" />
-                  Upload
-                </Button>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleOpenCamera(player._id)}
-                  disabled={uploadingPlayerId === player._id}
-                  className="flex-1"
-                >
-                  <Camera className="mr-1 h-3 w-3" />
-                  Camera
-                </Button>
-
-                {player.imageStorageId && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleRemoveImage(player._id)}
-                    disabled={uploadingPlayerId === player._id}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                )}
-              </div>
-
-              <div className="text-foreground/70 space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <span>Games Won:</span>
-                  <span className="font-medium">{player.totalWins}</span>
+              <CardContent>
+                <div className="text-foreground/70 space-y-2 text-xs">
+                  <div className="flex justify-between">
+                    <span>Games Won:</span>
+                    <span className="font-medium">{player.totalWins}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Total Points:</span>
+                    <span className="font-medium">{player.totalPoints}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Eliminations:</span>
+                    <span className="font-medium">
+                      {player.totalEliminations}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span>Total Points:</span>
-                  <span className="font-medium">{player.totalPoints}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Eliminations:</span>
-                  <span className="font-medium">
-                    {player.totalEliminations}
-                  </span>
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
 
-        {players.length === 0 && (
+        {sortedPlayers.length === 0 && (
           <div className="text-foreground/50 py-8 text-center">
             No players added yet. Add your first player above!
           </div>

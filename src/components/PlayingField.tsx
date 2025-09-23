@@ -52,7 +52,7 @@ export function PlayingField({
         return 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4'
       case 'horizontal':
       default:
-        return 'flex  flex-row-reverse items-center justify-center gap-4 overflow-x-auto p-4'
+        return 'flex flex-row-reverse items-center justify-center gap-4 overflow-x-auto p-4'
     }
   }
 

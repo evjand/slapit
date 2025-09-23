@@ -144,3 +144,32 @@ export const removePlayerImage = mutation({
     })
   },
 })
+
+export const deletePlayer = mutation({
+  args: {
+    playerId: v.id('players'),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) {
+      throw new Error('Must be logged in to delete players')
+    }
+
+    const player = await ctx.db.get(args.playerId)
+    if (!player) {
+      throw new Error('Player not found')
+    }
+
+    if (player.createdBy !== userId) {
+      throw new Error('Not authorized to delete this player')
+    }
+
+    // Delete the player's image from storage if it exists
+    if (player.imageStorageId) {
+      await ctx.storage.delete(player.imageStorageId)
+    }
+
+    // Delete the player
+    await ctx.db.delete(args.playerId)
+  },
+})
