@@ -125,6 +125,7 @@ function Content() {
             </h2>
           </div>
           <SignInForm />
+          <SignUpForm />
         </div>
       </Unauthenticated>
     </div>
