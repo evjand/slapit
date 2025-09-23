@@ -5,6 +5,10 @@ import { Id } from '../../convex/_generated/dataModel'
 import { useEffect } from 'react'
 import { Button } from './ui/button'
 import { SimpleUserAvatar } from './UserAvatar'
+import { HeatPlayingField } from './PlayingField'
+import { Card, CardContent, CardTitle, CardHeader } from './ui/card'
+import StatusIndicator from './StatusIndicator'
+import { Table, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
 
 interface HeatViewProps {
   heatId: Id<'heats'>
@@ -51,6 +55,7 @@ export function HeatView({ heatId, onBack }: HeatViewProps) {
   }
 
   const handleEliminatePlayer = async (playerId: Id<'players'>) => {
+    console.log('handleEliminatePlayer', playerId)
     if (!currentSet) return
 
     try {
@@ -91,54 +96,19 @@ export function HeatView({ heatId, onBack }: HeatViewProps) {
 
   return (
     <div className="space-y-6">
+      <Button onClick={onBack}>← Back to League</Button>
       {/* Heat Header */}
-      <div className="rounded-lg border p-6 shadow-sm">
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button onClick={onBack}>← Back to League</Button>
-            <h1 className="text-foreground text-3xl font-bold">
-              Heat {specificHeat.heatNumber}
-            </h1>
-          </div>
-          <div className="text-right">
-            <p className="text-foreground/70 text-sm">
-              Sets: {specificHeat.setsCompleted} /{' '}
-              {specificHeat.league?.setsPerHeat || 0}
-            </p>
-            <p className="text-foreground/70 text-sm">
-              Status: {specificHeat.status}
-            </p>
-          </div>
-        </div>
-
-        {/* Heat Players */}
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {specificHeat.players?.map((player) => (
-            <div
-              key={player?._id}
-              className="rounded-lg border-2 border-blue-200 bg-blue-50 p-4"
-            >
-              <h3 className="text-foreground font-semibold">{player?.name}</h3>
-              <p className="text-2xl font-bold text-blue-600">
-                {player?.totalPoints}
-              </p>
-              <p className="text-foreground/70 text-sm">
-                {player?.totalEliminations} eliminations
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* Heat Complete Message */}
-        {isHeatComplete && (
-          <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-4">
-            <p className="text-center font-medium text-green-800">
+      {isHeatComplete && (
+        <div className="rounded-lg border p-6 shadow-sm">
+          {/* Heat Complete Message */}
+          <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-600 dark:bg-green-900">
+            <p className="text-center font-medium text-green-800 dark:text-green-200">
               🏆 Heat Complete! All {specificHeat.league?.setsPerHeat} sets have
               been played.
             </p>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Current Set */}
       {currentSet ? (
@@ -167,76 +137,13 @@ export function HeatView({ heatId, onBack }: HeatViewProps) {
             </p>
           </div>
 
-          {/* Horizontal Player Layout - Only show remaining players */}
-          <div className="relative">
-            {/* Playing field visualization */}
-            <div className="mb-6 rounded-lg border-2 border-green-300 bg-green-100 p-8">
-              <div className="flex min-h-[120px] items-center justify-between">
-                {currentSet.players?.map((player, index) => {
-                  if (!player?._id) return null
-                  const isServer = player._id === currentSet.serverId
-
-                  return (
-                    <div
-                      key={player._id}
-                      className={`flex flex-col items-center space-y-3 ${
-                        currentSet.players && currentSet.players.length > 4
-                          ? 'flex-1'
-                          : ''
-                      }`}
-                      style={{
-                        minWidth:
-                          currentSet.players && currentSet.players.length > 4
-                            ? 'auto'
-                            : '150px',
-                      }}
-                    >
-                      {/* Player Card */}
-                      <div
-                        className={`w-full max-w-[150px] rounded-lg border-2 p-4 transition-all ${
-                          isServer
-                            ? 'border-green-500 bg-green-200'
-                            : 'border-gray-300 hover:border-blue-400'
-                        }`}
-                      >
-                        <div className="mb-2 text-center">
-                          <div className="mb-2 flex justify-center">
-                            <SimpleUserAvatar userId={player._id} size="md" />
-                          </div>
-                          <div className="mb-1 flex items-center justify-center">
-                            <h3 className="text-foreground text-sm font-semibold">
-                              {player.name}
-                            </h3>
-                            {isServer && (
-                              <span className="ml-2 rounded-full bg-green-500 px-2 py-1 text-xs text-white">
-                                S
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-foreground/70 text-xs">
-                            {player.totalPoints} pts
-                          </p>
-                        </div>
-
-                        {currentSet.status === 'active' && player._id && (
-                          <Button
-                            onClick={() => handleEliminatePlayer(player._id!)}
-                          >
-                            Eliminate
-                          </Button>
-                        )}
-                      </div>
-
-                      {/* Position indicator */}
-                      <div className="text-foreground/50 text-xs font-medium">
-                        Position {index + 1}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          </div>
+          {/* Playing Field */}
+          <HeatPlayingField
+            players={currentSet.players?.filter((p) => p?._id !== null) || []}
+            serverId={currentSet.serverId}
+            onPlayerEliminate={handleEliminatePlayer}
+            disabled={currentSet.status === 'completed'}
+          />
 
           {currentSet.status === 'completed' && (
             <div className="mt-6 rounded-lg border border-green-200 bg-green-50 p-4">
@@ -291,6 +198,51 @@ export function HeatView({ heatId, onBack }: HeatViewProps) {
           )}
         </div>
       )}
+      {/* Game Header */}
+      <div className="grid grid-cols-2 items-start gap-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <span>Heat {specificHeat.heatNumber}</span>
+              <StatusIndicator status={specificHeat.status} />
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="text-lg">
+              Sets: {specificHeat.setsCompleted} /{' '}
+              {specificHeat.league?.setsPerHeat || 0}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Scores</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table className="">
+              <TableHeader>
+                <TableRow>
+                  <TableHead align="right">Player</TableHead>
+                  <TableHead>Points</TableHead>
+                </TableRow>
+              </TableHeader>
+              {specificHeat.players
+                .sort((a, b) => b.totalPoints - a.totalPoints)
+                .map((participant) => (
+                  <TableRow key={participant._id}>
+                    <TableCell className="font-semibold" align="right">
+                      {participant.name}
+                    </TableCell>
+                    <TableCell className="text-primary pr-1 pl-2 font-bold">
+                      {participant.totalPoints}
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

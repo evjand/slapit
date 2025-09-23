@@ -9,6 +9,7 @@ import { SimpleUserAvatar } from './UserAvatar'
 import { Table, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
 import { Badge } from './ui/badge'
 import StatusIndicator from './StatusIndicator'
+import { GamePlayingField } from './PlayingField'
 
 interface GameViewProps {
   gameId: Id<'games'>
@@ -154,51 +155,13 @@ export function GameView({ gameId }: GameViewProps) {
             </p>
           </div>
 
-          {/* Horizontal Player Layout */}
-          <div className="relative">
-            {/* Playing field visualization */}
-            <div className="mb-6 rounded-lg p-8">
-              <div className="flex min-h-[120px] flex-row-reverse items-center justify-center gap-4 overflow-auto p-4">
-                {currentRound.players?.map((player, index) => {
-                  if (!player?._id) return null
-                  const isServer = player._id === currentRound.serverId
-
-                  return (
-                    <button
-                      key={player._id}
-                      onClick={() => handleEliminatePlayer(player._id!)}
-                      className="border-border hover:border-destructive relative flex-1 basis-0 rounded-lg border p-4"
-                    >
-                      {/* Player Card */}
-                      <div className="flex flex-col items-center gap-2 transition-all">
-                        {isServer && (
-                          <div className="absolute -top-2 -right-2 flex size-8 items-center justify-center rounded-full border border-green-500 bg-green-200 text-base font-bold text-green-800 dark:border-green-600 dark:bg-green-900 dark:text-green-200">
-                            S
-                          </div>
-                        )}
-                        <SimpleUserAvatar userId={player._id} size="md" />
-                        <div className="mb-2">
-                          <div className="mb-1 flex items-center justify-center">
-                            <h3 className="text-foreground text-lg font-semibold">
-                              {player.name}
-                            </h3>
-                          </div>
-                          <p className="text-foreground/70 text-sm">
-                            {player.currentPoints} pts
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Position indicator */}
-                      {/* <div className="text-foreground/50 text-xs font-medium">
-                          Position {index + 1}
-                        </div> */}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          </div>
+          {/* Playing Field */}
+          <GamePlayingField
+            players={currentRound.players || []}
+            serverId={currentRound.serverId}
+            onPlayerEliminate={handleEliminatePlayer}
+            disabled={currentRound.status === 'completed'}
+          />
           {currentRound.status === 'completed' && (
             <div className="mt-6 rounded-lg border border-green-200 bg-green-50 p-4">
               <p className="text-center font-medium text-green-800">

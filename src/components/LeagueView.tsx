@@ -5,6 +5,15 @@ import { Id } from '../../convex/_generated/dataModel'
 import { useState } from 'react'
 import { HeatView } from './HeatView'
 import { Button } from './ui/button'
+import { cn } from '@/lib/utils'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from './ui/table'
 
 interface LeagueViewProps {
   leagueId: Id<'leagues'>
@@ -82,25 +91,17 @@ export function LeagueView({ leagueId }: LeagueViewProps) {
 
       {/* Navigation Tabs */}
       <div className="rounded-lg border shadow-sm">
-        <div className="border-b border-gray-200">
-          <nav className="flex space-x-8 px-6">
+        <div className="border-border border-b">
+          <nav className="flex space-x-8 px-6 py-4">
             <Button
               onClick={() => setActiveTab('heats')}
-              className={`border-b-2 px-1 py-4 text-sm font-medium ${
-                activeTab === 'heats'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'hover:text-foreground/70 text-foreground/50 border-transparent hover:border-gray-300'
-              }`}
+              variant={activeTab === 'heats' ? 'default' : 'secondary'}
             >
               Current Heats
             </Button>
             <Button
               onClick={() => setActiveTab('table')}
-              className={`border-b-2 px-1 py-4 text-sm font-medium ${
-                activeTab === 'table'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'hover:text-foreground/70 text-foreground/50 border-transparent hover:border-gray-300'
-              }`}
+              variant={activeTab === 'table' ? 'default' : 'secondary'}
             >
               League Table
             </Button>
@@ -115,13 +116,14 @@ export function LeagueView({ leagueId }: LeagueViewProps) {
                   {heats.map((heat) => (
                     <div
                       key={heat._id}
-                      className={`cursor-pointer rounded-lg border-2 p-4 transition-all ${
+                      className={cn(
+                        'cursor-pointer rounded-lg border-2 p-4 transition-all',
                         heat.status === 'completed'
-                          ? 'border-green-200 bg-green-50'
+                          ? 'bg-card'
                           : heat.status === 'active'
-                            ? 'border-blue-200 bg-blue-50'
-                            : 'border-gray-200 bg-gray-50 hover:border-gray-300'
-                      }`}
+                            ? 'bg-card border-green-500 dark:border-green-600'
+                            : 'bg-card',
+                      )}
                       onClick={() => setSelectedHeatId(heat._id)}
                     >
                       <div className="mb-3 flex items-center justify-between">
@@ -177,33 +179,27 @@ export function LeagueView({ leagueId }: LeagueViewProps) {
             <div>
               {leagueTable && leagueTable.length > 0 ? (
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="text-foreground/50 px-6 py-3 text-left text-xs font-medium tracking-wider uppercase">
-                          Position
-                        </th>
-                        <th className="text-foreground/50 px-6 py-3 text-left text-xs font-medium tracking-wider uppercase">
-                          Player
-                        </th>
-                        <th className="text-foreground/50 px-6 py-3 text-left text-xs font-medium tracking-wider uppercase">
-                          Points
-                        </th>
-                        <th className="text-foreground/50 px-6 py-3 text-left text-xs font-medium tracking-wider uppercase">
-                          Eliminations
-                        </th>
-                        <th className="text-foreground/50 px-6 py-3 text-left text-xs font-medium tracking-wider uppercase">
-                          Games Played
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200 bg-white">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Position</TableHead>
+                        <TableHead>Player</TableHead>
+                        <TableHead>Points</TableHead>
+                        <TableHead>Eliminations</TableHead>
+                        <TableHead>Games Played</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {leagueTable.map((participant, index) => (
-                        <tr
+                        <TableRow
                           key={participant._id}
-                          className={index < 3 ? 'bg-yellow-50' : ''}
+                          className={cn(
+                            index == 0 && 'bg-green-100 dark:bg-green-900',
+                            index == 1 && 'bg-lime-100 dark:bg-lime-900',
+                            index == 2 && 'bg-yellow-100 dark:bg-yellow-900',
+                          )}
                         >
-                          <td className="text-foreground px-6 py-4 text-sm font-medium whitespace-nowrap">
+                          <TableCell>
                             <div className="flex items-center">
                               <span className="mr-2">#{index + 1}</span>
                               {index === 0 && (
@@ -216,23 +212,15 @@ export function LeagueView({ leagueId }: LeagueViewProps) {
                                 <span className="text-yellow-600">🥉</span>
                               )}
                             </div>
-                          </td>
-                          <td className="text-foreground px-6 py-4 text-sm whitespace-nowrap">
-                            {participant.player?.name}
-                          </td>
-                          <td className="text-foreground px-6 py-4 text-sm font-semibold whitespace-nowrap">
-                            {participant.totalPoints}
-                          </td>
-                          <td className="text-foreground px-6 py-4 text-sm whitespace-nowrap">
-                            {participant.totalEliminations}
-                          </td>
-                          <td className="text-foreground px-6 py-4 text-sm whitespace-nowrap">
-                            {participant.gamesPlayed}
-                          </td>
-                        </tr>
+                          </TableCell>
+                          <TableCell>{participant.player?.name}</TableCell>
+                          <TableCell>{participant.totalPoints}</TableCell>
+                          <TableCell>{participant.totalEliminations}</TableCell>
+                          <TableCell>{participant.gamesPlayed}</TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
               ) : (
                 <div className="text-foreground/50 py-8 text-center">

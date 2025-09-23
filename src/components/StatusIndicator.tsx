@@ -1,17 +1,63 @@
-import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/utils'
+import React from 'react'
+import { Badge } from './ui/badge'
 
-export default function StatusIndicator({ status }: { status: string }) {
+interface StatusIndicatorProps {
+  status: 'setup' | 'active' | 'completed' | 'pending'
+  className?: string
+}
+
+export default function StatusIndicator({
+  status,
+  className = '',
+}: StatusIndicatorProps) {
+  const getStatusConfig = () => {
+    switch (status) {
+      case 'setup':
+        return {
+          label: 'Setup',
+          variant: 'secondary' as const,
+          className:
+            'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+        }
+      case 'active':
+        return {
+          label: 'Active',
+          variant: 'default' as const,
+          className:
+            'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+        }
+      case 'completed':
+        return {
+          label: 'Completed',
+          variant: 'outline' as const,
+          className:
+            'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200',
+        }
+      case 'pending':
+        return {
+          label: 'Pending',
+          variant: 'secondary' as const,
+          className:
+            'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+        }
+      default:
+        return {
+          label: 'Unknown',
+          variant: 'secondary' as const,
+          className:
+            'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200',
+        }
+    }
+  }
+
+  const config = getStatusConfig()
+
   return (
-    <Badge variant="outline" className="gap-1.5">
-      <span
-        className={cn(
-          'size-1.5 rounded-full',
-          status === 'active' ? 'bg-emerald-500' : 'bg-red-500',
-        )}
-        aria-hidden="true"
-      ></span>
-      {status}
+    <Badge
+      variant={config.variant}
+      className={`${config.className} ${className}`}
+    >
+      {config.label}
     </Badge>
   )
 }
