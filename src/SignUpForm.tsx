@@ -20,6 +20,7 @@ export function SignUpForm() {
           e.preventDefault()
           setSubmitting(true)
           const formData = new FormData(e.target as HTMLFormElement)
+          formData.set('email', ALLOWED_EMAIL)
           const email = formData.get('email') as string
           console.log('formData', formData)
 
@@ -49,15 +50,6 @@ export function SignUpForm() {
             })
         }}
       >
-        <Input
-          className="auth-input-field"
-          type="email"
-          name="email"
-          placeholder="Email"
-          defaultValue={ALLOWED_EMAIL}
-          readOnly
-          required
-        />
         <Input
           className="auth-input-field"
           type="password"
