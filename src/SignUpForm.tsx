@@ -45,7 +45,7 @@ export function SignUpForm() {
               } else {
                 toastTitle = 'Could not create account. Please try again.'
               }
-              toast.error(toastTitle)
+              toast.error(toastTitle, { description: (error as Error).message })
               setSubmitting(false)
             })
         }}
