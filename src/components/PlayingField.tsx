@@ -7,6 +7,7 @@ export interface Player {
   name?: string
   currentPoints?: number
   totalPoints?: number
+  imageStorageId?: Id<'_storage'>
 }
 
 export interface PlayingFieldProps {
@@ -85,7 +86,11 @@ export function PlayingField({
                     S
                   </div>
                 )}
-                <SimpleUserAvatar userId={player._id} size={avatarSize} />
+                <SimpleUserAvatar
+                  userId={player._id}
+                  size={avatarSize}
+                  imageStorageId={player.imageStorageId}
+                />
                 <div className="mb-2">
                   <div className="mb-1 flex items-center justify-center">
                     <h3 className="text-foreground text-lg font-semibold">

@@ -1,66 +1,146 @@
-import { query, mutation } from "./_generated/server";
-import { v } from "convex/values";
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { query, mutation } from './_generated/server'
+import { v } from 'convex/values'
+import { getAuthUserId } from '@convex-dev/auth/server'
+import { Id } from './_generated/dataModel'
 
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await getAuthUserId(ctx)
     if (!userId) {
-      return [];
+      return []
     }
-    
+
     return await ctx.db
-      .query("players")
-      .withIndex("by_creator", (q) => q.eq("createdBy", userId))
-      .collect();
+      .query('players')
+      .withIndex('by_creator', (q) => q.eq('createdBy', userId))
+      .collect()
   },
-});
+})
+
+export const getImageUrl = query({
+  args: { storageId: v.id('_storage') },
+  handler: async (ctx, args) => {
+    return await ctx.storage.getUrl(args.storageId)
+  },
+})
 
 export const create = mutation({
   args: {
     name: v.string(),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await getAuthUserId(ctx)
     if (!userId) {
-      throw new Error("Must be logged in to create players");
+      throw new Error('Must be logged in to create players')
     }
 
-    return await ctx.db.insert("players", {
+    return await ctx.db.insert('players', {
       name: args.name,
       totalWins: 0,
       totalPoints: 0,
       totalEliminations: 0,
       createdBy: userId,
-    });
+    })
   },
-});
+})
 
 export const updateStats = mutation({
   args: {
-    playerId: v.id("players"),
+    playerId: v.id('players'),
     wins: v.optional(v.number()),
     points: v.optional(v.number()),
     eliminations: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const player = await ctx.db.get(args.playerId);
+    const player = await ctx.db.get(args.playerId)
     if (!player) {
-      throw new Error("Player not found");
+      throw new Error('Player not found')
     }
 
-    const updates: any = {};
+    const updates: any = {}
     if (args.wins !== undefined) {
-      updates.totalWins = player.totalWins + args.wins;
+      updates.totalWins = player.totalWins + args.wins
     }
     if (args.points !== undefined) {
-      updates.totalPoints = player.totalPoints + args.points;
+      updates.totalPoints = player.totalPoints + args.points
     }
     if (args.eliminations !== undefined) {
-      updates.totalEliminations = player.totalEliminations + args.eliminations;
+      updates.totalEliminations = player.totalEliminations + args.eliminations
     }
 
-    await ctx.db.patch(args.playerId, updates);
+    await ctx.db.patch(args.playerId, updates)
   },
-});
+})
+
+export const generateUploadUrl = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) {
+      throw new Error('Must be logged in to upload images')
+    }
+    return await ctx.storage.generateUploadUrl()
+  },
+})
+
+export const updatePlayerImage = mutation({
+  args: {
+    playerId: v.id('players'),
+    imageStorageId: v.id('_storage'),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) {
+      throw new Error('Must be logged in to update player images')
+    }
+
+    const player = await ctx.db.get(args.playerId)
+    if (!player) {
+      throw new Error('Player not found')
+    }
+
+    if (player.createdBy !== userId) {
+      throw new Error('Not authorized to update this player')
+    }
+
+    // Delete old image if it exists
+    if (player.imageStorageId) {
+      await ctx.storage.delete(player.imageStorageId)
+    }
+
+    await ctx.db.patch(args.playerId, {
+      imageStorageId: args.imageStorageId,
+    })
+  },
+})
+
+export const removePlayerImage = mutation({
+  args: {
+    playerId: v.id('players'),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) {
+      throw new Error('Must be logged in to remove player images')
+    }
+
+    const player = await ctx.db.get(args.playerId)
+    if (!player) {
+      throw new Error('Player not found')
+    }
+
+    if (player.createdBy !== userId) {
+      throw new Error('Not authorized to update this player')
+    }
+
+    // Delete the image from storage
+    if (player.imageStorageId) {
+      await ctx.storage.delete(player.imageStorageId)
+    }
+
+    await ctx.db.patch(args.playerId, {
+      imageStorageId: undefined,
+    })
+  },
+})

@@ -9,6 +9,7 @@ const applicationTables = {
     totalPoints: v.number(),
     totalEliminations: v.number(),
     createdBy: v.id('users'),
+    imageStorageId: v.optional(v.id('_storage')),
   }).index('by_creator', ['createdBy']),
 
   games: defineTable({
@@ -17,7 +18,7 @@ const applicationTables = {
     status: v.union(
       v.literal('setup'),
       v.literal('active'),
-      v.literal('completed')
+      v.literal('completed'),
     ),
     winner: v.optional(v.id('players')),
     createdBy: v.id('users'),
@@ -59,7 +60,7 @@ const applicationTables = {
     status: v.union(
       v.literal('setup'),
       v.literal('active'),
-      v.literal('completed')
+      v.literal('completed'),
     ),
     currentRound: v.number(),
     createdBy: v.id('users'),
@@ -81,7 +82,7 @@ const applicationTables = {
     status: v.union(
       v.literal('pending'),
       v.literal('active'),
-      v.literal('completed')
+      v.literal('completed'),
     ),
     setsCompleted: v.number(),
   }).index('by_league_round', ['leagueId', 'roundNumber']),

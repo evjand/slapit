@@ -1,10 +1,13 @@
 import React from 'react'
 import { Id } from '../../convex/_generated/dataModel'
+import { useQuery } from 'convex/react'
+import { api } from '../../convex/_generated/api'
 
 interface UserAvatarProps {
   userId: Id<'users'> | Id<'players'>
   size?: 'sm' | 'md' | 'lg' | 'xl'
   className?: string
+  imageStorageId?: Id<'_storage'>
 }
 
 // Generate a deterministic color palette based on user ID
@@ -120,15 +123,37 @@ export function SimpleUserAvatar({
   userId,
   size = 'md',
   className = '',
+  imageStorageId,
 }: UserAvatarProps) {
-  const colors = generateColorPalette(userId)
+  const imageUrl = useQuery(
+    api.players.getImageUrl,
+    imageStorageId ? { storageId: imageStorageId } : 'skip',
+  )
 
   const sizeClasses = {
-    sm: 'w-8 h-8 p-1',
-    md: 'w-12 h-12 p-2',
-    lg: 'w-16 h-16 p-3',
-    xl: 'w-24 h-24 p-4',
+    sm: 'w-8 h-8',
+    md: 'w-12 h-12',
+    lg: 'w-16 h-16',
+    xl: 'w-24 h-24',
   }
+
+  // If we have an image, show it
+  if (imageUrl) {
+    return (
+      <div
+        className={`${sizeClasses[size]} ${className} bg-accent border-border overflow-hidden rounded-full border`}
+      >
+        <img
+          src={imageUrl}
+          alt="Player avatar"
+          className="h-full w-full object-cover"
+        />
+      </div>
+    )
+  }
+
+  // Fallback to generated pattern
+  const colors = generateColorPalette(userId)
 
   // Create a simple hash for pattern
   let hash = 0
