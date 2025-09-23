@@ -9,20 +9,25 @@ export function AppNavigation() {
   }
 
   return (
-    <nav className="flex space-x-4">
-      <Link to="/pool">
-        <Button variant={isActive('/pool') ? 'default' : 'secondary'}>
-          Player Pool
+    <nav className="flex space-x-2">
+      <Link to="/">
+        <Button variant={isActive('/') ? 'outline' : 'ghost'} size="sm">
+          Home
         </Button>
       </Link>
-      <Link to="/setup">
-        <Button variant={isActive('/setup') ? 'default' : 'secondary'}>
-          Game Setup
+      <Link to="/players">
+        <Button variant={isActive('/players') ? 'outline' : 'ghost'} size="sm">
+          Players
         </Button>
       </Link>
-      <Link to="/league-setup">
-        <Button variant={isActive('/league-setup') ? 'default' : 'secondary'}>
-          League Setup
+      <Link to="/games">
+        <Button variant={isActive('/games') ? 'outline' : 'ghost'} size="sm">
+          Games
+        </Button>
+      </Link>
+      <Link to="/leagues">
+        <Button variant={isActive('/leagues') ? 'outline' : 'ghost'} size="sm">
+          Leagues
         </Button>
       </Link>
     </nav>

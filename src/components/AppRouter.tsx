@@ -1,8 +1,7 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 import { Authenticated, Unauthenticated, useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { SignInForm } from '../SignInForm'
-import { AppNavigation } from './AppNavigation'
 import {
   HomeRoute,
   PlayerPoolRoute,
@@ -10,6 +9,8 @@ import {
   LeagueSetupRoute,
   GameViewRoute,
   LeagueViewRoute,
+  GamesOverviewRoute,
+  LeaguesOverviewRoute,
 } from '../routes'
 
 function RouterContent() {
@@ -26,14 +27,12 @@ function RouterContent() {
   return (
     <div className="container mx-auto px-4">
       <Authenticated>
-        <div className="mb-6">
-          <AppNavigation />
-        </div>
         <Routes>
           <Route path="/" element={<HomeRoute />} />
-          <Route path="/pool" element={<PlayerPoolRoute />} />
-          <Route path="/setup" element={<GameSetupRoute />} />
-          <Route path="/league-setup" element={<LeagueSetupRoute />} />
+          <Route path="/players" element={<PlayerPoolRoute />} />
+          <Route path="/games" element={<GamesOverviewRoute />} />
+          <Route path="/leagues" element={<LeaguesOverviewRoute />} />
+          <Route path="/leagues/create" element={<LeagueSetupRoute />} />
           <Route path="/game/:gameId" element={<GameViewRoute />} />
           <Route path="/league/:leagueId" element={<LeagueViewRoute />} />
         </Routes>
@@ -55,9 +54,5 @@ function RouterContent() {
 }
 
 export function AppRouter() {
-  return (
-    <BrowserRouter>
-      <RouterContent />
-    </BrowserRouter>
-  )
+  return <RouterContent />
 }
