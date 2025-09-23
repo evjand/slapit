@@ -1,5 +1,10 @@
-import { PlayerPool } from '../components/PlayerPool'
+import PageWrapper from '@/components/PageWrapper'
+import { PlayerPool } from '@/components/PlayerPool'
 
 export function PlayerPoolRoute() {
-  return <PlayerPool />
+  return (
+    <PageWrapper>
+      <PlayerPool />
+    </PageWrapper>
+  )
 }

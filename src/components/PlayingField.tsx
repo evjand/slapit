@@ -4,6 +4,7 @@ import { Id } from '../../convex/_generated/dataModel'
 import { cn } from '@/lib/utils'
 
 export interface Player {
+  totalWins?: number
   _id?: Id<'players'>
   name?: string
   currentPoints?: number

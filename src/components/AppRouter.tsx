@@ -25,7 +25,7 @@ function RouterContent() {
   }
 
   return (
-    <div className="container mx-auto px-4">
+    <>
       <Authenticated>
         <Routes>
           <Route path="/" element={<HomeRoute />} />
@@ -49,7 +49,7 @@ function RouterContent() {
           <SignInForm />
         </div>
       </Unauthenticated>
-    </div>
+    </>
   )
 }
 

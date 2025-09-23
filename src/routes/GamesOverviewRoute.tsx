@@ -1,5 +1,10 @@
+import PageWrapper from '@/components/PageWrapper'
 import { GamesOverview } from '../components/GamesOverview'
 
 export function GamesOverviewRoute() {
-  return <GamesOverview />
+  return (
+    <PageWrapper>
+      <GamesOverview />
+    </PageWrapper>
+  )
 }

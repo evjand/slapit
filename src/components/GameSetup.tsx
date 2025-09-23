@@ -64,16 +64,6 @@ export function GameSetup({ onGameCreated }: GameSetupProps) {
     }
   }
 
-  const handleStartExistingGame = async (gameId: Id<'games'>) => {
-    try {
-      await startGame({ gameId })
-      onGameCreated(gameId)
-      toast.success('Game started!')
-    } catch (error) {
-      toast.error('Failed to start game')
-    }
-  }
-
   return (
     <div className="space-y-6">
       {/* Create New Game */}
@@ -101,12 +91,12 @@ export function GameSetup({ onGameCreated }: GameSetupProps) {
             <Label className="text-foreground/70 mb-2 block text-sm font-medium">
               Select Players ({selectedPlayerIds.length} selected)
             </Label>
-            <div className="grid max-h-60 grid-cols-2 gap-2 overflow-y-auto md:grid-cols-4 lg:grid-cols-6">
+            <div className="flex flex-wrap gap-2">
               {players.map((player) => (
                 <Label
                   key={player._id}
                   className={cn(
-                    'border-input hover:bg-accent flex cursor-pointer items-center space-x-2 rounded-lg border px-6 py-4',
+                    'border-input hover:bg-accent flex cursor-pointer items-center space-x-3 rounded-lg border p-4',
                     selectedPlayerIds.includes(player._id) &&
                       'border-green-500 bg-green-100 dark:border-green-600 dark:bg-green-900',
                   )}
@@ -117,7 +107,7 @@ export function GameSetup({ onGameCreated }: GameSetupProps) {
                     disabled={isCreating}
                   />
 
-                  <span className="text-sm">{player.name}</span>
+                  <span className="text-base">{player.name}</span>
                 </Label>
               ))}
             </div>
@@ -135,50 +125,6 @@ export function GameSetup({ onGameCreated }: GameSetupProps) {
             {isCreating ? 'Creating Game...' : 'Create & Start Game'}
           </Button>
         </form>
-      </div>
-
-      {/* Existing Games */}
-      <div className="rounded-lg border p-6 shadow-sm">
-        <h2 className="text-foreground mb-4 text-2xl font-bold">
-          Recent Games
-        </h2>
-
-        <div className="space-y-3">
-          {games.slice(0, 5).map((game) => (
-            <div
-              key={game._id}
-              className="border-border flex items-center justify-between rounded-lg border p-4"
-            >
-              <div>
-                <h3 className="text-foreground font-medium">{game.name}</h3>
-                <p className="text-foreground/70 text-sm">
-                  First to {game.winningPoints} points • Status: {game.status}
-                </p>
-              </div>
-              {game.status === 'setup' && (
-                <Button onClick={() => handleStartExistingGame(game._id)}>
-                  Start Game
-                </Button>
-              )}
-              {game.status === 'active' && (
-                <Button onClick={() => onGameCreated(game._id)}>
-                  Continue
-                </Button>
-              )}
-              {game.status === 'completed' && (
-                <span className="text-foreground/70 rounded-lg px-4 py-2">
-                  Completed
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {games.length === 0 && (
-          <div className="text-foreground/50 py-8 text-center">
-            No games created yet. Create your first game above!
-          </div>
-        )}
       </div>
     </div>
   )
