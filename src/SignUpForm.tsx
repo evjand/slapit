@@ -2,6 +2,8 @@
 import { useAuthActions } from '@convex-dev/auth/react'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { Button } from './components/ui/button'
+import { Input } from './components/ui/input'
 
 export function SignUpForm() {
   const { signIn } = useAuthActions()
@@ -13,7 +15,7 @@ export function SignUpForm() {
   return (
     <div className="w-full">
       <form
-        className="flex flex-col gap-form-field"
+        className="gap-form-field flex flex-col"
         onSubmit={(e) => {
           e.preventDefault()
           setSubmitting(true)
@@ -24,7 +26,7 @@ export function SignUpForm() {
           // Check if email is allowed
           if (email !== ALLOWED_EMAIL) {
             toast.error(
-              `Registration is restricted. Only ${ALLOWED_EMAIL} can create an account. You tried to use ${email}.`
+              `Registration is restricted. Only ${ALLOWED_EMAIL} can create an account. You tried to use ${email}.`,
             )
             setSubmitting(false)
             return
@@ -47,7 +49,7 @@ export function SignUpForm() {
             })
         }}
       >
-        <input
+        <Input
           className="auth-input-field"
           type="email"
           name="email"
@@ -56,7 +58,7 @@ export function SignUpForm() {
           readOnly
           required
         />
-        <input
+        <Input
           className="auth-input-field"
           type="password"
           name="password"
@@ -64,9 +66,9 @@ export function SignUpForm() {
           minLength={6}
           required
         />
-        <button className="auth-button" type="submit" disabled={submitting}>
+        <Button className="auth-button" type="submit" disabled={submitting}>
           Create Account
-        </button>
+        </Button>
       </form>
     </div>
   )

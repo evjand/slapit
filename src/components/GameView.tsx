@@ -3,6 +3,9 @@ import { api } from '../../convex/_generated/api'
 import { toast } from 'sonner'
 import { Id } from '../../convex/_generated/dataModel'
 import { useEffect } from 'react'
+import { Button } from './ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { SimpleUserAvatar } from './UserAvatar'
 
 interface GameViewProps {
   gameId: Id<'games'>
@@ -63,8 +66,8 @@ export function GameView({ gameId }: GameViewProps) {
 
   if (!game) {
     return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-500"></div>
       </div>
     )
   }
@@ -72,19 +75,19 @@ export function GameView({ gameId }: GameViewProps) {
   if (game.status === 'completed') {
     const winner = game.participants.find((p) => p.playerId === game.winner)
     return (
-      <div className="bg-white rounded-lg shadow-sm border p-8 text-center">
-        <h1 className="text-4xl font-bold text-green-600 mb-4">
+      <div className="rounded-lg border p-8 text-center shadow-sm">
+        <h1 className="mb-4 text-4xl font-bold text-green-600">
           🏆 Game Complete!
         </h1>
-        <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+        <h2 className="text-foreground mb-2 text-2xl font-semibold">
           {winner?.player?.name} Wins!
         </h2>
-        <p className="text-lg text-gray-600 mb-6">
+        <p className="text-foreground/70 mb-6 text-lg">
           Final Score: {winner?.currentPoints} / {game.winningPoints} points
         </p>
 
-        <div className="bg-gray-50 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="rounded-lg p-6">
+          <h3 className="text-foreground mb-4 text-lg font-semibold">
             Final Standings
           </h3>
           <div className="space-y-2">
@@ -93,10 +96,10 @@ export function GameView({ gameId }: GameViewProps) {
               .map((participant, index) => (
                 <div
                   key={participant.playerId}
-                  className="flex justify-between items-center p-3 bg-white rounded border"
+                  className="flex items-center justify-between rounded border p-3"
                 >
                   <div className="flex items-center space-x-3">
-                    <span className="text-lg font-bold text-gray-500">
+                    <span className="text-foreground/50 text-lg font-bold">
                       #{index + 1}
                     </span>
                     <span className="font-medium">
@@ -118,175 +121,150 @@ export function GameView({ gameId }: GameViewProps) {
 
   return (
     <div className="space-y-6">
-      {/* Game Header */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-3xl font-bold text-gray-900">{game.name}</h1>
-          <div className="text-right">
-            <p className="text-sm text-gray-600">
-              First to {game.winningPoints} points
-            </p>
-            <p className="text-sm text-gray-600">Status: {game.status}</p>
-          </div>
-        </div>
-
-        {/* Current Scores */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {game.participants
-            .sort((a, b) => b.currentPoints - a.currentPoints)
-            .map((participant) => (
-              <div
-                key={participant.playerId}
-                className={`p-4 rounded-lg border-2 ${
-                  participant.isEliminated
-                    ? 'bg-gray-100 border-gray-300'
-                    : 'bg-blue-50 border-blue-200'
-                }`}
-              >
-                <h3 className="font-semibold text-gray-900">
-                  {participant.player?.name}
-                </h3>
-                <p className="text-2xl font-bold text-blue-600">
-                  <span className="text-sm text-gray-600">Points:</span>{' '}
-                  {participant.currentPoints}
-                </p>
-                <p className="text-sm text-gray-600">
-                  <span className="text-sm text-gray-600">Eliminations:</span>{' '}
-                  {participant.totalEliminations}
-                </p>
-              </div>
-            ))}
-        </div>
-      </div>
-
       {/* Current Round */}
       {currentRound ? (
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">
+        <div className="rounded-lg border p-6 shadow-sm">
+          <div className="mb-6 flex items-center justify-between">
+            <h2 className="text-foreground text-2xl font-bold">
               Round {currentRound.roundNumber}
             </h2>
             <div className="flex space-x-3">
               {currentRound.eliminations.length > 0 &&
                 currentRound.status === 'active' && (
-                  <button
-                    onClick={handleRevertElimination}
-                    className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
-                  >
+                  <Button onClick={handleRevertElimination} variant="outline">
                     Revert Last Elimination
-                  </button>
+                  </Button>
                 )}
             </div>
           </div>
 
           <div className="mb-6">
-            <p className="text-lg text-gray-700 text-center">
-              <span className="font-semibold">Server:</span>{' '}
-              {
-                currentRound.players.find(
-                  (p) => p._id === currentRound.serverId
-                )?.name
-              }
+            <p className="text-center text-lg">
+              <span className="text-foreground/70">Serve: </span>
+              <span className="font-semibold">
+                {
+                  currentRound.players.find(
+                    (p) => p._id === currentRound.serverId,
+                  )?.name
+                }
+              </span>
             </p>
           </div>
 
           {/* Horizontal Player Layout */}
           <div className="relative">
             {/* Playing field visualization */}
-            <div className="bg-green-100 border-2 border-green-300 rounded-lg p-8 mb-6">
-              <div className="flex justify-center items-center min-h-[120px] gap-4 flex-row-reverse">
+            <div className="mb-6 rounded-lg p-8">
+              <div className="flex min-h-[120px] flex-row-reverse items-center justify-center gap-4 overflow-auto p-4">
                 {currentRound.players?.map((player, index) => {
                   if (!player?._id) return null
                   const isServer = player._id === currentRound.serverId
 
                   return (
-                    <div
+                    <button
                       key={player._id}
-                      className={`flex flex-col items-center space-y-3 ${
-                        currentRound.players.length > 4 ? 'flex-1' : ''
-                      }`}
-                      style={{
-                        minWidth:
-                          currentRound.players.length > 4 ? 'auto' : '150px',
-                      }}
+                      onClick={() => handleEliminatePlayer(player._id!)}
+                      className="border-border relative flex-1 basis-0 border p-4"
                     >
                       {/* Player Card */}
-                      <div
-                        className={`p-4 rounded-lg border-2 transition-all w-full max-w-[150px] ${
-                          isServer
-                            ? 'bg-green-200 border-green-500'
-                            : 'bg-white border-gray-300 hover:border-blue-400'
-                        }`}
-                      >
-                        <div className="text-center mb-2">
-                          <div className="flex justify-center items-center mb-1">
-                            <h3 className="font-semibold text-gray-900 text-sm">
+                      <div className="flex flex-col items-center gap-2 transition-all">
+                        {isServer && (
+                          <div className="absolute -top-2 -right-2 flex size-8 items-center justify-center rounded-full border border-green-500 bg-green-200 text-base font-bold text-green-800 dark:border-green-600 dark:bg-green-900 dark:text-green-200">
+                            S
+                          </div>
+                        )}
+                        <SimpleUserAvatar userId={player._id} size="md" />
+                        <div className="mb-2">
+                          <div className="mb-1 flex items-center justify-center">
+                            <h3 className="text-foreground text-lg font-semibold">
                               {player.name}
                             </h3>
-                            {isServer && (
-                              <span className="ml-2 px-2 py-1 bg-green-500 text-white text-xs rounded-full">
-                                S
-                              </span>
-                            )}
                           </div>
-                          <p className="text-xs text-gray-600">
+                          <p className="text-foreground/70 text-sm">
                             {player.currentPoints} pts
                           </p>
                         </div>
-
-                        {currentRound.status === 'active' && player._id && (
-                          <button
-                            onClick={() => handleEliminatePlayer(player._id!)}
-                            className="w-full px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-xs"
-                          >
-                            Eliminate
-                          </button>
-                        )}
                       </div>
 
                       {/* Position indicator */}
-                      <div className="text-xs text-gray-500 font-medium">
-                        Position {index + 1}
-                      </div>
-                    </div>
+                      {/* <div className="text-foreground/50 text-xs font-medium">
+                          Position {index + 1}
+                        </div> */}
+                    </button>
                   )
                 })}
               </div>
             </div>
           </div>
           {currentRound.status === 'completed' && (
-            <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-green-800 font-medium text-center">
+            <div className="mt-6 rounded-lg border border-green-200 bg-green-50 p-4">
+              <p className="text-center font-medium text-green-800">
                 🎉 Round Complete! Winner:{' '}
                 {
                   currentRound.players.find(
-                    (p) => p._id === currentRound.winner
+                    (p) => p._id === currentRound.winner,
                   )?.name
                 }
               </p>
-              <p className="text-green-700 text-sm text-center mt-1">
+              <p className="mt-1 text-center text-sm text-green-700">
                 Starting next round automatically...
               </p>
             </div>
           )}
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm border p-6 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            Ready to Start?
+        <div className="rounded-lg border p-6 text-center shadow-sm">
+          <h2 className="text-foreground mb-4 text-2xl font-bold">
+            Ready to start?
           </h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-foreground/70 mb-6">
             {activeParticipants.length} players ready to play
           </p>
-          <button
+          <Button
             onClick={handleStartNewRound}
             disabled={activeParticipants.length < 2}
-            className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
           >
-            Start New Round
-          </button>
+            Start new round
+          </Button>
         </div>
       )}
+      {/* Game Header */}
+      <div className="rounded-lg border p-6 shadow-sm">
+        <div className="mb-4 flex items-center justify-between">
+          <h1 className="text-foreground text-3xl font-bold">{game.name}</h1>
+          <div className="text-right">
+            <p className="text-foreground/70 text-sm">
+              First to {game.winningPoints} points
+            </p>
+            <p className="text-foreground/70 text-sm">Status: {game.status}</p>
+          </div>
+        </div>
+
+        {/* Current Scores */}
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          {game.participants
+            .sort((a, b) => b.currentPoints - a.currentPoints)
+            .map((participant) => (
+              <Card key={participant.playerId}>
+                <CardHeader>
+                  <CardTitle>{participant.player?.name}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="items-leading flex border-separate flex-col">
+                    <div>
+                      <span>Points: </span>
+                      <span>{participant.currentPoints}</span>
+                    </div>
+                    <div>
+                      <span>Eliminations: </span>
+                      <span>{participant.totalEliminations}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+        </div>
+      </div>
     </div>
   )
 }

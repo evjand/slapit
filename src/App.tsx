@@ -11,19 +11,30 @@ import { LeagueSetup } from './components/LeagueSetup'
 import { LeagueView } from './components/LeagueView'
 import { Id } from '../convex/_generated/dataModel'
 import { SignUpForm } from './SignUpForm'
+import { Button } from './components/ui/button'
+import { ThemeProvider } from './components/theme-provider'
+import { ModeToggle } from './components/mode-toggle'
 
 export default function App() {
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm h-16 flex justify-between items-center border-b shadow-sm px-4">
-        <h2 className="text-xl font-semibold text-primary">Slap It Manager</h2>
-        <SignOutButton />
-      </header>
-      <main className="flex-1 p-4">
-        <Content />
-      </main>
-      <Toaster />
-    </div>
+    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+      <div className="bg-background flex min-h-screen flex-col">
+        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b px-4 shadow-sm backdrop-blur-sm">
+          <h2 className="text-primary text-3xl font-extrabold italic">
+            <span className="text-black dark:text-white">SLAP</span>
+            <span className="text-primary">IT</span>
+          </h2>
+          <div className="flex items-center space-x-2">
+            <ModeToggle />
+            <SignOutButton />
+          </div>
+        </header>
+        <main className="flex-1 p-4">
+          <Content />
+        </main>
+        <Toaster />
+      </div>
+    </ThemeProvider>
   )
 }
 
@@ -38,70 +49,44 @@ function Content() {
 
   if (loggedInUser === undefined) {
     return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="container mx-auto px-4">
       <Authenticated>
         <div className="mb-6">
           <nav className="flex space-x-4">
-            <button
+            <Button
+              variant={currentView === 'pool' ? 'default' : 'secondary'}
               onClick={() => setCurrentView('pool')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                currentView === 'pool'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
             >
               Player Pool
-            </button>
-            <button
+            </Button>
+            <Button
+              variant={currentView === 'setup' ? 'default' : 'secondary'}
               onClick={() => setCurrentView('setup')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                currentView === 'setup'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
             >
               Game Setup
-            </button>
-            <button
+            </Button>
+            <Button
+              variant={currentView === 'league-setup' ? 'default' : 'secondary'}
               onClick={() => setCurrentView('league-setup')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                currentView === 'league-setup'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
             >
               League Setup
-            </button>
+            </Button>
             {selectedGameId && (
-              <button
-                onClick={() => setCurrentView('game')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  currentView === 'game'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
-              >
+              <Button onClick={() => setCurrentView('game')}>
                 Current Game
-              </button>
+              </Button>
             )}
             {selectedLeagueId && (
-              <button
-                onClick={() => setCurrentView('league')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  currentView === 'league'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
-              >
+              <Button onClick={() => setCurrentView('league')}>
                 Current League
-              </button>
+              </Button>
             )}
           </nav>
         </div>
@@ -132,17 +117,14 @@ function Content() {
       </Authenticated>
 
       <Unauthenticated>
-        <div className="flex flex-col items-center justify-center min-h-[400px] space-y-6">
+        <div className="flex min-h-[400px] flex-col items-center justify-center space-y-6">
           <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              Slap It Manager
-            </h1>
-            <p className="text-xl text-gray-600">
-              Manage your Slap It games and tournaments
-            </p>
+            <h2 className="text-primary text-3xl font-extrabold italic">
+              <span className="text-black dark:text-white">SLAP</span>
+              <span className="text-primary">IT</span>
+            </h2>
           </div>
           <SignInForm />
-          <SignUpForm />
         </div>
       </Unauthenticated>
     </div>

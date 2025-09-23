@@ -3,6 +3,11 @@ import { useMutation, useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { toast } from 'sonner'
 import { Id } from '../../convex/_generated/dataModel'
+import { Button } from './ui/button'
+import { Input } from './ui/input'
+import { Label } from './ui/label'
+import { Checkbox } from './ui/checkbox'
+import { cn } from '@/lib/utils'
 
 interface GameSetupProps {
   onGameCreated: (gameId: Id<'games'>) => void
@@ -16,7 +21,7 @@ export function GameSetup({ onGameCreated }: GameSetupProps) {
 
   const [winningPoints, setWinningPoints] = useState(2)
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<Id<'players'>[]>(
-    []
+    [],
   )
   const [isCreating, setIsCreating] = useState(false)
 
@@ -24,7 +29,7 @@ export function GameSetup({ onGameCreated }: GameSetupProps) {
     setSelectedPlayerIds((prev) =>
       prev.includes(playerId)
         ? prev.filter((id) => id !== playerId)
-        : [...prev, playerId]
+        : [...prev, playerId],
     )
   }
 
@@ -72,99 +77,96 @@ export function GameSetup({ onGameCreated }: GameSetupProps) {
   return (
     <div className="space-y-6">
       {/* Create New Game */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">
+      <div className="bg-card rounded-lg border p-6 shadow-sm">
+        <h2 className="text-foreground mb-4 text-2xl font-bold">
           Create New Game
         </h2>
 
         <form onSubmit={handleCreateGame} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <Label className="text-foreground/70 mb-2 block text-sm font-medium">
               Points to Win
-            </label>
-            <input
+            </Label>
+            <Input
               type="number"
               min="1"
               max="20"
               value={winningPoints}
               onChange={(e) => setWinningPoints(parseInt(e.target.value) || 1)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               disabled={isCreating}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <Label className="text-foreground/70 mb-2 block text-sm font-medium">
               Select Players ({selectedPlayerIds.length} selected)
-            </label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-60 overflow-y-auto border border-gray-200 rounded-lg p-3">
+            </Label>
+            <div className="grid max-h-60 grid-cols-2 gap-2 overflow-y-auto md:grid-cols-4 lg:grid-cols-6">
               {players.map((player) => (
-                <label
+                <Label
                   key={player._id}
-                  className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded"
+                  className={cn(
+                    'border-input hover:bg-accent flex cursor-pointer items-center space-x-2 rounded-lg border px-6 py-4',
+                    selectedPlayerIds.includes(player._id) &&
+                      'border-green-500 bg-green-100 dark:border-green-600 dark:bg-green-900',
+                  )}
                 >
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={selectedPlayerIds.includes(player._id)}
-                    onChange={() => handlePlayerToggle(player._id)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    onCheckedChange={() => handlePlayerToggle(player._id)}
                     disabled={isCreating}
                   />
+
                   <span className="text-sm">{player.name}</span>
-                </label>
+                </Label>
               ))}
             </div>
             {players.length === 0 && (
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="text-foreground/50 mt-2 text-sm">
                 No players available. Add players in the Player Pool first.
               </p>
             )}
           </div>
 
-          <button
+          <Button
             type="submit"
             disabled={isCreating || selectedPlayerIds.length < 2}
-            className="w-full px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
           >
             {isCreating ? 'Creating Game...' : 'Create & Start Game'}
-          </button>
+          </Button>
         </form>
       </div>
 
       {/* Existing Games */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Recent Games</h2>
+      <div className="rounded-lg border p-6 shadow-sm">
+        <h2 className="text-foreground mb-4 text-2xl font-bold">
+          Recent Games
+        </h2>
 
         <div className="space-y-3">
           {games.slice(0, 5).map((game) => (
             <div
               key={game._id}
-              className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
+              className="border-border flex items-center justify-between rounded-lg border p-4"
             >
               <div>
-                <h3 className="font-medium text-gray-900">{game.name}</h3>
-                <p className="text-sm text-gray-600">
+                <h3 className="text-foreground font-medium">{game.name}</h3>
+                <p className="text-foreground/70 text-sm">
                   First to {game.winningPoints} points • Status: {game.status}
                 </p>
               </div>
               {game.status === 'setup' && (
-                <button
-                  onClick={() => handleStartExistingGame(game._id)}
-                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-                >
+                <Button onClick={() => handleStartExistingGame(game._id)}>
                   Start Game
-                </button>
+                </Button>
               )}
               {game.status === 'active' && (
-                <button
-                  onClick={() => onGameCreated(game._id)}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                >
+                <Button onClick={() => onGameCreated(game._id)}>
                   Continue
-                </button>
+                </Button>
               )}
               {game.status === 'completed' && (
-                <span className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg">
+                <span className="text-foreground/70 rounded-lg px-4 py-2">
                   Completed
                 </span>
               )}
@@ -173,7 +175,7 @@ export function GameSetup({ onGameCreated }: GameSetupProps) {
         </div>
 
         {games.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-foreground/50 py-8 text-center">
             No games created yet. Create your first game above!
           </div>
         )}
