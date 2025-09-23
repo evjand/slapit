@@ -73,7 +73,7 @@ export function GameView({ gameId }: GameViewProps) {
         roundId: currentRound._id,
         playerId,
       })
-      toast.success('Player eliminated!')
+      // toast.success('Player eliminated!')
     } catch (error) {
       toast.error('Failed to eliminate player')
     }
@@ -150,36 +150,36 @@ export function GameView({ gameId }: GameViewProps) {
     return (
       <div className="bg-background fixed inset-0 z-50">
         {/* Focus mode header */}
-        <div className="absolute top-4 right-4 left-4 z-10 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-foreground text-2xl font-bold">{game.name}</h1>
-            <StatusIndicator status={game.status} />
+        <div className="absolute top-6 right-6 left-6 z-10 flex items-center justify-between">
+          <div className="flex items-center space-x-6">
+            <h1 className="text-foreground text-4xl font-bold">{game.name}</h1>
+            <StatusIndicator status={game.status} size="lg" />
             {currentRound && (
-              <span className="text-foreground/70 text-lg">
+              <span className="text-foreground/70 text-2xl">
                 Round {currentRound.roundNumber}
               </span>
             )}
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
             {currentRound?.eliminations &&
               currentRound.eliminations.length > 0 &&
               currentRound.status === 'active' && (
                 <Button
                   onClick={handleRevertElimination}
                   variant="outline"
-                  size="sm"
+                  size="lg"
                 >
-                  <RotateCcw className="mr-1 h-4 w-4" />
+                  <RotateCcw className="mr-2 h-5 w-5" />
                   Revert
                 </Button>
               )}
             <Button
               onClick={() => setIsFocusMode(false)}
               variant="outline"
-              size="sm"
+              size="lg"
               title="Exit focus mode (Escape)"
             >
-              <Minimize2 className="mr-1 h-4 w-4" />
+              <Minimize2 className="mr-2 h-5 w-5" />
               Exit Focus
             </Button>
           </div>
@@ -187,37 +187,50 @@ export function GameView({ gameId }: GameViewProps) {
 
         {/* Server indicator */}
         {currentRound && (
-          <div className="absolute top-20 left-1/2 z-10 -translate-x-1/2 transform">
-            <div className="bg-background/90 rounded-lg border px-4 py-2 backdrop-blur-sm">
-              <p className="text-center text-lg">
-                <span className="text-foreground/70">Serve: </span>
-                <span className="font-semibold">
+          <div className="absolute top-24 left-1/2 z-10 -translate-x-1/2 transform">
+            <div className="bg-background/90 rounded-xl border-2 px-8 py-4 backdrop-blur-sm">
+              <div className="flex items-center gap-2 text-center text-2xl">
+                <span className="text-foreground/70 mr-4">Serve: </span>
+                <SimpleUserAvatar
+                  userId={currentRound.serverId as Id<'players'>}
+                  size="md"
+                  imageStorageId={
+                    currentRound.players.find(
+                      (p) => p._id === currentRound.serverId,
+                    )?.imageStorageId
+                  }
+                />
+                <span className="font-bold">
                   {
                     currentRound.players.find(
                       (p) => p._id === currentRound.serverId,
                     )?.name
                   }
                 </span>
-              </p>
+              </div>
             </div>
           </div>
         )}
 
         {/* Large playing field */}
-        <div className="flex h-full items-center justify-center pt-24 pb-8">
+        <div className="flex h-full items-center justify-center pt-32 pb-12">
           {currentRound ? (
-            <div className="w-full max-w-6xl">
+            <div className="w-full">
               <GamePlayingField
                 players={currentRound.players || []}
                 serverId={currentRound.serverId}
                 onPlayerEliminate={handleEliminatePlayer}
                 disabled={currentRound.status === 'completed'}
-                className="!p-12"
-                avatarSize="xl"
+                className="!p-4"
+                avatarSize={
+                  currentRound.players && currentRound.players.length > 6
+                    ? 'xl'
+                    : '2xl'
+                }
               />
               {currentRound.status === 'completed' && (
-                <div className="mt-8 rounded-lg border border-green-200 bg-green-50 p-6 text-center">
-                  <p className="text-xl font-medium text-green-800">
+                <div className="mt-12 rounded-xl border-2 border-green-200 bg-green-50 p-8 text-center">
+                  <p className="text-3xl font-bold text-green-800">
                     🎉 Round Complete! Winner:{' '}
                     {
                       currentRound.players.find(
@@ -225,7 +238,7 @@ export function GameView({ gameId }: GameViewProps) {
                       )?.name
                     }
                   </p>
-                  <p className="mt-2 text-green-700">
+                  <p className="mt-4 text-2xl text-green-700">
                     Starting next round automatically...
                   </p>
                 </div>
@@ -233,16 +246,17 @@ export function GameView({ gameId }: GameViewProps) {
             </div>
           ) : (
             <div className="text-center">
-              <h2 className="text-foreground mb-6 text-4xl font-bold">
+              <h2 className="text-foreground mb-8 text-6xl font-bold">
                 Ready to start?
               </h2>
-              <p className="text-foreground/70 mb-8 text-xl">
+              <p className="text-foreground/70 mb-12 text-3xl">
                 {activeParticipants.length} players ready to play
               </p>
               <Button
                 onClick={handleStartNewRound}
                 disabled={activeParticipants.length < 2}
                 size="lg"
+                className="px-12 py-6 text-xl"
               >
                 Start new round
               </Button>
@@ -251,23 +265,29 @@ export function GameView({ gameId }: GameViewProps) {
         </div>
 
         {/* Bottom scores overlay */}
-        <div className="absolute right-4 bottom-4 left-4 z-10">
-          <div className="bg-background/90 rounded-lg border p-4 backdrop-blur-sm">
-            <div className="flex items-center justify-center space-x-8">
+        <div className="absolute right-6 bottom-6 left-6 z-10">
+          <div className="bg-background/90 rounded-xl border-2 p-6 backdrop-blur-sm">
+            <div className="flex items-center justify-center space-x-8 overflow-auto">
               {game.participants
                 .sort((a, b) => b.currentPoints - a.currentPoints)
                 .map((participant) => (
                   <div
                     key={participant.playerId}
-                    className="flex items-center space-x-2"
+                    className="flex items-center space-x-4"
                   >
-                    <SimpleUserAvatar userId={participant.playerId} size="sm" />
-                    <span className="font-semibold">
-                      {participant.player?.name}
-                    </span>
-                    <span className="text-primary font-bold">
-                      {participant.currentPoints}
-                    </span>
+                    <SimpleUserAvatar
+                      userId={participant.playerId}
+                      size="sm"
+                      imageStorageId={participant.player?.imageStorageId}
+                    />
+                    <div className="flex gap-2">
+                      <span className="text-lg font-bold">
+                        {participant.player?.name}
+                      </span>
+                      <span className="text-primary text-lg font-bold">
+                        {participant.currentPoints}
+                      </span>
+                    </div>
                   </div>
                 ))}
             </div>

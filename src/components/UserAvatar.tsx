@@ -5,7 +5,7 @@ import { api } from '../../convex/_generated/api'
 
 interface UserAvatarProps {
   userId: Id<'users'> | Id<'players'>
-  size?: 'sm' | 'md' | 'lg' | 'xl'
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
   className?: string
   imageStorageId?: Id<'_storage'>
 }
@@ -84,6 +84,7 @@ export function UserAvatar({
     md: 'w-12 h-12',
     lg: 'w-16 h-16',
     xl: 'w-24 h-24',
+    '2xl': 'w-32 h-32',
   }
 
   const cellSize = {
@@ -91,6 +92,7 @@ export function UserAvatar({
     md: 'w-3 h-3',
     lg: 'w-4 h-4',
     xl: 'w-6 h-6',
+    '2xl': 'w-8 h-8',
   }
 
   return (
@@ -135,6 +137,7 @@ export function SimpleUserAvatar({
     md: 'w-12 h-12',
     lg: 'w-16 h-16',
     xl: 'w-24 h-24',
+    '2xl': 'w-32 h-32',
   }
 
   // If we have an image, show it

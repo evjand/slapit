@@ -4,11 +4,13 @@ import { Badge } from './ui/badge'
 interface StatusIndicatorProps {
   status: 'setup' | 'active' | 'completed' | 'pending'
   className?: string
+  size?: 'sm' | 'md' | 'lg'
 }
 
 export default function StatusIndicator({
   status,
   className = '',
+  size = 'md',
 }: StatusIndicatorProps) {
   const getStatusConfig = () => {
     switch (status) {
@@ -52,10 +54,21 @@ export default function StatusIndicator({
 
   const config = getStatusConfig()
 
+  const getSizeClasses = () => {
+    switch (size) {
+      case 'sm':
+        return 'text-xs px-2 py-1'
+      case 'lg':
+        return 'text-lg px-4 py-2'
+      default:
+        return 'text-sm px-3 py-1'
+    }
+  }
+
   return (
     <Badge
       variant={config.variant}
-      className={`${config.className} ${className}`}
+      className={`${config.className} ${getSizeClasses()} ${className}`}
     >
       {config.label}
     </Badge>

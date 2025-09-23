@@ -1,6 +1,7 @@
 import React from 'react'
 import { SimpleUserAvatar } from './UserAvatar'
 import { Id } from '../../convex/_generated/dataModel'
+import { cn } from '@/lib/utils'
 
 export interface Player {
   _id?: Id<'players'>
@@ -19,7 +20,7 @@ export interface PlayingFieldProps {
   pointsLabel?: string
   className?: string
   playerCardClassName?: string
-  avatarSize?: 'sm' | 'md' | 'lg' | 'xl'
+  avatarSize?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
   layout?: 'horizontal' | 'vertical' | 'grid'
   disabled?: boolean
 }
@@ -51,21 +52,34 @@ export function PlayingField({
         return 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4'
       case 'horizontal':
       default:
-        return 'flex min-h-[120px] flex-row-reverse items-center justify-center gap-4 overflow-auto p-4'
+        return 'flex  flex-row-reverse items-center justify-center gap-4 overflow-x-auto p-4'
     }
   }
 
   const getPlayerCardClasses = () => {
     const baseClasses =
-      'border-border hover:border-destructive relative flex-1 basis-0 rounded-lg border p-4 transition-all'
+      'border-border hover:border-destructive relative flex-shrink-0 rounded-lg border p-4 transition-all bg-card'
     const disabledClasses = disabled
       ? 'opacity-50 cursor-not-allowed'
       : 'cursor-pointer'
-    return `${baseClasses} ${disabledClasses} ${playerCardClassName}`
+
+    // Calculate minimum width based on avatar size to ensure all players fit
+    const minWidth =
+      avatarSize === '2xl'
+        ? 'min-w-[180px]'
+        : avatarSize === 'xl'
+          ? 'min-w-[160px]'
+          : avatarSize === 'lg'
+            ? 'min-w-[140px]'
+            : avatarSize === 'md'
+              ? 'min-w-[120px]'
+              : 'min-w-[100px]'
+
+    return `${baseClasses} ${minWidth} ${disabledClasses} ${playerCardClassName}`
   }
 
   return (
-    <div className={`mb-6 rounded-lg p-8 ${className}`}>
+    <div className={`mb-6 rounded-lg ${className}`}>
       <div className={getLayoutClasses()}>
         {players?.map((player, index) => {
           if (!player?._id || !player?.name) return null
@@ -76,13 +90,27 @@ export function PlayingField({
             <button
               key={player._id}
               onClick={() => handlePlayerClick(player._id!)}
-              className={getPlayerCardClasses()}
+              className={cn(
+                getPlayerCardClasses(),
+                isServer &&
+                  'border-indigo-500 bg-indigo-200 font-bold text-indigo-800 dark:border-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-200',
+              )}
               disabled={disabled}
             >
               {/* Player Card */}
               <div className="flex flex-col items-center gap-2">
                 {isServer && showServerIndicator && (
-                  <div className="absolute -top-2 -right-2 flex size-8 items-center justify-center rounded-full border border-green-500 bg-green-200 text-base font-bold text-green-800 dark:border-green-600 dark:bg-green-900 dark:text-green-200">
+                  <div
+                    className={`absolute -top-2 -right-2 flex items-center justify-center rounded-full border border-indigo-500 bg-indigo-200 font-bold text-indigo-800 dark:border-indigo-600 dark:bg-indigo-900 dark:text-indigo-200 ${
+                      avatarSize === '2xl'
+                        ? 'size-12 text-xl'
+                        : avatarSize === 'xl'
+                          ? 'size-10 text-lg'
+                          : avatarSize === 'lg'
+                            ? 'size-9 text-base'
+                            : 'size-8 text-sm'
+                    }`}
+                  >
                     S
                   </div>
                 )}
@@ -93,12 +121,35 @@ export function PlayingField({
                 />
                 <div className="mb-2">
                   <div className="mb-1 flex items-center justify-center">
-                    <h3 className="text-foreground text-lg font-semibold">
+                    <h3
+                      className={cn(
+                        'text-foreground leading-loose font-semibold',
+                        avatarSize === '2xl'
+                          ? 'text-4xl'
+                          : avatarSize === 'xl'
+                            ? 'text-2xl'
+                            : avatarSize === 'lg'
+                              ? 'text-xl'
+                              : avatarSize === 'md'
+                                ? 'text-lg'
+                                : 'text-base',
+                      )}
+                    >
                       {player.name}
                     </h3>
                   </div>
                   {showPoints && (
-                    <p className="text-foreground/70 text-sm">
+                    <p
+                      className={`text-foreground/70 ${
+                        avatarSize === '2xl'
+                          ? 'text-lg'
+                          : avatarSize === 'xl'
+                            ? 'text-base'
+                            : avatarSize === 'lg'
+                              ? 'text-sm'
+                              : 'text-xs'
+                      }`}
+                    >
                       {points} {pointsLabel}
                     </p>
                   )}
@@ -126,7 +177,7 @@ export function GamePlayingField({
   onPlayerEliminate: (playerId: Id<'players'>) => void
   disabled?: boolean
   className?: string
-  avatarSize?: 'sm' | 'md' | 'lg' | 'xl'
+  avatarSize?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
 }) {
   return (
     <PlayingField
