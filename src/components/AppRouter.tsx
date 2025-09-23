@@ -1,0 +1,63 @@
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { Authenticated, Unauthenticated, useQuery } from 'convex/react'
+import { api } from '../../convex/_generated/api'
+import { SignInForm } from '../SignInForm'
+import { AppNavigation } from './AppNavigation'
+import {
+  HomeRoute,
+  PlayerPoolRoute,
+  GameSetupRoute,
+  LeagueSetupRoute,
+  GameViewRoute,
+  LeagueViewRoute,
+} from '../routes'
+
+function RouterContent() {
+  const loggedInUser = useQuery(api.auth.loggedInUser)
+
+  if (loggedInUser === undefined) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="container mx-auto px-4">
+      <Authenticated>
+        <div className="mb-6">
+          <AppNavigation />
+        </div>
+        <Routes>
+          <Route path="/" element={<HomeRoute />} />
+          <Route path="/pool" element={<PlayerPoolRoute />} />
+          <Route path="/setup" element={<GameSetupRoute />} />
+          <Route path="/league-setup" element={<LeagueSetupRoute />} />
+          <Route path="/game/:gameId" element={<GameViewRoute />} />
+          <Route path="/league/:leagueId" element={<LeagueViewRoute />} />
+        </Routes>
+      </Authenticated>
+
+      <Unauthenticated>
+        <div className="flex min-h-[400px] flex-col items-center justify-center space-y-6">
+          <div className="text-center">
+            <h2 className="text-primary text-3xl font-extrabold italic">
+              <span className="text-black dark:text-white">SLAP</span>
+              <span className="text-primary">IT</span>
+            </h2>
+          </div>
+          <SignInForm />
+        </div>
+      </Unauthenticated>
+    </div>
+  )
+}
+
+export function AppRouter() {
+  return (
+    <BrowserRouter>
+      <RouterContent />
+    </BrowserRouter>
+  )
+}
