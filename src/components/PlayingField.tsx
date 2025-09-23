@@ -113,11 +113,15 @@ export function GamePlayingField({
   serverId,
   onPlayerEliminate,
   disabled = false,
+  className,
+  avatarSize = 'md',
 }: {
   players: Player[]
   serverId?: Id<'players'>
   onPlayerEliminate: (playerId: Id<'players'>) => void
   disabled?: boolean
+  className?: string
+  avatarSize?: 'sm' | 'md' | 'lg' | 'xl'
 }) {
   return (
     <PlayingField
@@ -127,9 +131,10 @@ export function GamePlayingField({
       showServerIndicator={true}
       showPoints={true}
       pointsLabel="pts"
-      avatarSize="md"
+      avatarSize={avatarSize}
       layout="horizontal"
       disabled={disabled}
+      className={className}
     />
   )
 }

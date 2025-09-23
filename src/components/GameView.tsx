@@ -2,7 +2,7 @@ import { useMutation, useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { toast } from 'sonner'
 import { Id } from '../../convex/_generated/dataModel'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from './ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { SimpleUserAvatar } from './UserAvatar'
@@ -10,6 +10,7 @@ import { Table, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
 import { Badge } from './ui/badge'
 import StatusIndicator from './StatusIndicator'
 import { GamePlayingField } from './PlayingField'
+import { Maximize2, Minimize2, RotateCcw } from 'lucide-react'
 
 interface GameViewProps {
   gameId: Id<'games'>
@@ -21,6 +22,7 @@ export function GameView({ gameId }: GameViewProps) {
   const startNewRound = useMutation(api.rounds.startNewRound)
   const eliminatePlayer = useMutation(api.rounds.eliminatePlayer)
   const revertLastElimination = useMutation(api.rounds.revertLastElimination)
+  const [isFocusMode, setIsFocusMode] = useState(false)
 
   // Auto-start next round when current round is completed
   useEffect(() => {
@@ -32,6 +34,26 @@ export function GameView({ gameId }: GameViewProps) {
       return () => clearTimeout(timer)
     }
   }, [currentRound?.status, game?.status])
+
+  // Keyboard shortcuts for focus mode
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Toggle focus mode with F key
+      if (event.key === 'f' || event.key === 'F') {
+        if (event.ctrlKey || event.metaKey) {
+          event.preventDefault()
+          setIsFocusMode(!isFocusMode)
+        }
+      }
+      // Exit focus mode with Escape key
+      if (event.key === 'Escape' && isFocusMode) {
+        setIsFocusMode(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isFocusMode])
 
   const handleStartNewRound = async () => {
     try {
@@ -123,8 +145,154 @@ export function GameView({ gameId }: GameViewProps) {
 
   const activeParticipants = game.participants.filter((p) => !p.isEliminated)
 
+  // Focus mode layout - maximizes playing field visibility
+  if (isFocusMode) {
+    return (
+      <div className="bg-background fixed inset-0 z-50">
+        {/* Focus mode header */}
+        <div className="absolute top-4 right-4 left-4 z-10 flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <h1 className="text-foreground text-2xl font-bold">{game.name}</h1>
+            <StatusIndicator status={game.status} />
+            {currentRound && (
+              <span className="text-foreground/70 text-lg">
+                Round {currentRound.roundNumber}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center space-x-2">
+            {currentRound?.eliminations &&
+              currentRound.eliminations.length > 0 &&
+              currentRound.status === 'active' && (
+                <Button
+                  onClick={handleRevertElimination}
+                  variant="outline"
+                  size="sm"
+                >
+                  <RotateCcw className="mr-1 h-4 w-4" />
+                  Revert
+                </Button>
+              )}
+            <Button
+              onClick={() => setIsFocusMode(false)}
+              variant="outline"
+              size="sm"
+              title="Exit focus mode (Escape)"
+            >
+              <Minimize2 className="mr-1 h-4 w-4" />
+              Exit Focus
+            </Button>
+          </div>
+        </div>
+
+        {/* Server indicator */}
+        {currentRound && (
+          <div className="absolute top-20 left-1/2 z-10 -translate-x-1/2 transform">
+            <div className="bg-background/90 rounded-lg border px-4 py-2 backdrop-blur-sm">
+              <p className="text-center text-lg">
+                <span className="text-foreground/70">Serve: </span>
+                <span className="font-semibold">
+                  {
+                    currentRound.players.find(
+                      (p) => p._id === currentRound.serverId,
+                    )?.name
+                  }
+                </span>
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Large playing field */}
+        <div className="flex h-full items-center justify-center pt-24 pb-8">
+          {currentRound ? (
+            <div className="w-full max-w-6xl">
+              <GamePlayingField
+                players={currentRound.players || []}
+                serverId={currentRound.serverId}
+                onPlayerEliminate={handleEliminatePlayer}
+                disabled={currentRound.status === 'completed'}
+                className="!p-12"
+                avatarSize="xl"
+              />
+              {currentRound.status === 'completed' && (
+                <div className="mt-8 rounded-lg border border-green-200 bg-green-50 p-6 text-center">
+                  <p className="text-xl font-medium text-green-800">
+                    🎉 Round Complete! Winner:{' '}
+                    {
+                      currentRound.players.find(
+                        (p) => p._id === currentRound.winner,
+                      )?.name
+                    }
+                  </p>
+                  <p className="mt-2 text-green-700">
+                    Starting next round automatically...
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center">
+              <h2 className="text-foreground mb-6 text-4xl font-bold">
+                Ready to start?
+              </h2>
+              <p className="text-foreground/70 mb-8 text-xl">
+                {activeParticipants.length} players ready to play
+              </p>
+              <Button
+                onClick={handleStartNewRound}
+                disabled={activeParticipants.length < 2}
+                size="lg"
+              >
+                Start new round
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Bottom scores overlay */}
+        <div className="absolute right-4 bottom-4 left-4 z-10">
+          <div className="bg-background/90 rounded-lg border p-4 backdrop-blur-sm">
+            <div className="flex items-center justify-center space-x-8">
+              {game.participants
+                .sort((a, b) => b.currentPoints - a.currentPoints)
+                .map((participant) => (
+                  <div
+                    key={participant.playerId}
+                    className="flex items-center space-x-2"
+                  >
+                    <SimpleUserAvatar userId={participant.playerId} size="sm" />
+                    <span className="font-semibold">
+                      {participant.player?.name}
+                    </span>
+                    <span className="text-primary font-bold">
+                      {participant.currentPoints}
+                    </span>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Normal mode layout
   return (
     <div className="space-y-6">
+      {/* Focus mode toggle */}
+      <div className="flex justify-end">
+        <Button
+          onClick={() => setIsFocusMode(true)}
+          variant="outline"
+          size="sm"
+          title="Enter focus mode (Ctrl+F or Cmd+F)"
+        >
+          <Maximize2 className="mr-1 h-4 w-4" />
+          Focus Mode
+        </Button>
+      </div>
+
       {/* Current Round */}
       {currentRound ? (
         <div className="rounded-lg border p-6 shadow-sm">
