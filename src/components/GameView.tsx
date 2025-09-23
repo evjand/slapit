@@ -6,6 +6,9 @@ import { useEffect } from 'react'
 import { Button } from './ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { SimpleUserAvatar } from './UserAvatar'
+import { Table, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
+import { Badge } from './ui/badge'
+import StatusIndicator from './StatusIndicator'
 
 interface GameViewProps {
   gameId: Id<'games'>
@@ -164,7 +167,7 @@ export function GameView({ gameId }: GameViewProps) {
                     <button
                       key={player._id}
                       onClick={() => handleEliminatePlayer(player._id!)}
-                      className="border-border relative flex-1 basis-0 border p-4"
+                      className="border-border hover:border-destructive relative flex-1 basis-0 rounded-lg border p-4"
                     >
                       {/* Player Card */}
                       <div className="flex flex-col items-center gap-2 transition-all">
@@ -229,41 +232,46 @@ export function GameView({ gameId }: GameViewProps) {
         </div>
       )}
       {/* Game Header */}
-      <div className="rounded-lg border p-6 shadow-sm">
-        <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-foreground text-3xl font-bold">{game.name}</h1>
-          <div className="text-right">
-            <p className="text-foreground/70 text-sm">
-              First to {game.winningPoints} points
-            </p>
-            <p className="text-foreground/70 text-sm">Status: {game.status}</p>
-          </div>
-        </div>
+      <div className="grid grid-cols-2 items-start gap-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <span>{game.name}</span>
+              <StatusIndicator status={game.status} />
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="text-lg">Points to win: {game.winningPoints}</div>
+          </CardContent>
+        </Card>
 
-        {/* Current Scores */}
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {game.participants
-            .sort((a, b) => b.currentPoints - a.currentPoints)
-            .map((participant) => (
-              <Card key={participant.playerId}>
-                <CardHeader>
-                  <CardTitle>{participant.player?.name}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="items-leading flex border-separate flex-col">
-                    <div>
-                      <span>Points: </span>
-                      <span>{participant.currentPoints}</span>
-                    </div>
-                    <div>
-                      <span>Eliminations: </span>
-                      <span>{participant.totalEliminations}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Scores</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table className="">
+              <TableHeader>
+                <TableRow>
+                  <TableHead align="right">Player</TableHead>
+                  <TableHead>Points</TableHead>
+                </TableRow>
+              </TableHeader>
+              {game.participants
+                .sort((a, b) => b.currentPoints - a.currentPoints)
+                .map((participant) => (
+                  <TableRow key={participant.playerId}>
+                    <TableCell className="font-semibold" align="right">
+                      {participant.player?.name}
+                    </TableCell>
+                    <TableCell className="text-primary pr-1 pl-2 font-bold">
+                      {participant.currentPoints}
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </Table>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
