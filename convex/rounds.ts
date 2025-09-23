@@ -33,7 +33,7 @@ export const getCurrentRound = query({
 
     // Get eliminated player IDs
     const eliminatedPlayerIds = activeEliminations.map(
-      (e) => e.eliminatedPlayerId
+      (e) => e.eliminatedPlayerId,
     )
 
     // Get current player order (this should be the shuffled order for the current round)
@@ -54,7 +54,7 @@ export const getCurrentRound = query({
             currentPoints: participant?.currentPoints || 0,
             isEliminated: false,
           }
-        })
+        }),
     )
 
     // The current server is always the first player in the current order
@@ -167,7 +167,7 @@ export const eliminatePlayer = mutation({
       .collect()
 
     const eliminatedPlayerIds = currentEliminations.map(
-      (e) => e.eliminatedPlayerId
+      (e) => e.eliminatedPlayerId,
     )
 
     // Check if player is already eliminated
@@ -182,7 +182,7 @@ export const eliminatePlayer = mutation({
     const eliminatorId = calculateEliminator(
       args.playerId,
       currentPlayerOrder,
-      eliminatedPlayerIds
+      eliminatedPlayerIds,
     )
 
     // Record the elimination
@@ -198,7 +198,7 @@ export const eliminatePlayer = mutation({
     // Calculate remaining players after this elimination
     const newEliminatedIds = [...eliminatedPlayerIds, args.playerId]
     const remainingPlayerIds = currentPlayerOrder.filter(
-      (id) => !newEliminatedIds.includes(id)
+      (id) => !newEliminatedIds.includes(id),
     )
 
     // Check if this is the last elimination (only one player left)
@@ -232,13 +232,31 @@ export const eliminatePlayer = mutation({
             winner: winnerId,
           })
 
-          // Update player stats
+          // Update player stats for winner
           const player = await ctx.db.get(winnerId)
           if (player) {
             await ctx.db.patch(winnerId, {
               totalWins: player.totalWins + 1,
               totalPoints: player.totalPoints + newPoints,
             })
+          }
+
+          // Update total points stats for all other players
+          const allParticipants = await ctx.db
+            .query('gameParticipants')
+            .withIndex('by_game', (q) => q.eq('gameId', args.gameId))
+            .collect()
+
+          for (const participant of allParticipants) {
+            if (participant.playerId !== winnerId) {
+              const otherPlayer = await ctx.db.get(participant.playerId)
+              if (otherPlayer) {
+                await ctx.db.patch(otherPlayer._id, {
+                  totalPoints:
+                    otherPlayer.totalPoints + participant.currentPoints,
+                })
+              }
+            }
           }
 
           // Note: In regular games, we don't track eliminations in player stats
@@ -252,11 +270,11 @@ export const eliminatePlayer = mutation({
     } else if (remainingPlayerIds.length > 1) {
       // Reshuffle remaining players for next elimination
       const currentServerId = currentPlayerOrder.find(
-        (id) => !newEliminatedIds.includes(id)
+        (id) => !newEliminatedIds.includes(id),
       )
       const newPlayerOrder = reshuffleRemainingPlayers(
         remainingPlayerIds,
-        currentServerId
+        currentServerId,
       )
 
       // Update the round with the new player order
@@ -300,11 +318,11 @@ export const revertLastElimination = mutation({
       .collect()
 
     const eliminatedPlayerIds = remainingEliminations.map(
-      (e) => e.eliminatedPlayerId
+      (e) => e.eliminatedPlayerId,
     )
     const originalPlayerOrder = round.playerOrder
     const remainingPlayerIds = originalPlayerOrder.filter(
-      (id) => !eliminatedPlayerIds.includes(id)
+      (id) => !eliminatedPlayerIds.includes(id),
     )
 
     // If round was completed, reopen it and reshuffle
