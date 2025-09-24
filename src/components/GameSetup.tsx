@@ -16,8 +16,7 @@ interface GameSetupProps {
 export function GameSetup({ onGameCreated }: GameSetupProps) {
   const players = useQuery(api.players.list) || []
   const games = useQuery(api.games.list) || []
-  const createGame = useMutation(api.games.create)
-  const startGame = useMutation(api.games.startGame)
+  const createAndStartGame = useMutation(api.games.createAndStartGame)
 
   const [winningPoints, setWinningPoints] = useState(2)
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<Id<'players'>[]>(
@@ -42,7 +41,7 @@ export function GameSetup({ onGameCreated }: GameSetupProps) {
 
     setIsCreating(true)
     try {
-      const gameId = await createGame({
+      const gameId = await createAndStartGame({
         name: new Date().toLocaleString('nb-NO', {
           dateStyle: 'medium',
           timeStyle: 'medium',
@@ -51,9 +50,7 @@ export function GameSetup({ onGameCreated }: GameSetupProps) {
         playerIds: selectedPlayerIds,
       })
 
-      await startGame({ gameId })
-
-      toast.success('Game created successfully!')
+      toast.success('Game created and started!')
       onGameCreated(gameId)
     } catch (error) {
       toast.error('Failed to create game', {

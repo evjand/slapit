@@ -1,6 +1,7 @@
 import { query, mutation } from './_generated/server'
 import { v } from 'convex/values'
 import { getAuthUserId } from '@convex-dev/auth/server'
+import { api } from './_generated/api'
 
 export const list = query({
   args: {},
@@ -44,10 +45,10 @@ export const get = query({
           ...participant,
           player,
           totalEliminations: eliminations.filter(
-            (e) => e.eliminatorPlayerId === participant.playerId
+            (e) => e.eliminatorPlayerId === participant.playerId,
           ).length,
         }
-      })
+      }),
     )
 
     return {
@@ -94,6 +95,43 @@ export const startGame = mutation({
   args: { gameId: v.id('games') },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.gameId, { status: 'active' })
+  },
+})
+
+export const createAndStartGame = mutation({
+  args: {
+    name: v.string(),
+    winningPoints: v.number(),
+    playerIds: v.array(v.id('players')),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) {
+      throw new Error('Must be logged in to create games')
+    }
+
+    // Create the game with active status
+    const gameId = await ctx.db.insert('games', {
+      name: args.name,
+      winningPoints: args.winningPoints,
+      status: 'active',
+      createdBy: userId,
+    })
+
+    // Add participants
+    for (const playerId of args.playerIds) {
+      await ctx.db.insert('gameParticipants', {
+        gameId,
+        playerId,
+        currentPoints: 0,
+        isEliminated: false,
+      })
+    }
+
+    // Start the first round
+    await ctx.runMutation(api.rounds.startNewRound, { gameId })
+
+    return gameId
   },
 })
 

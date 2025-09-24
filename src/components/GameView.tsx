@@ -10,7 +10,8 @@ import { Table, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
 import { Badge } from './ui/badge'
 import StatusIndicator from './StatusIndicator'
 import { GamePlayingField } from './PlayingField'
-import { Maximize2, Minimize2, RotateCcw } from 'lucide-react'
+import { Maximize2, Minimize2, RotateCcw, Play, ArrowLeft } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 interface GameViewProps {
   gameId: Id<'games'>
@@ -22,7 +23,10 @@ export function GameView({ gameId }: GameViewProps) {
   const startNewRound = useMutation(api.rounds.startNewRound)
   const eliminatePlayer = useMutation(api.rounds.eliminatePlayer)
   const revertLastElimination = useMutation(api.rounds.revertLastElimination)
+  const createAndStartGame = useMutation(api.games.createAndStartGame)
   const [isFocusMode, setIsFocusMode] = useState(false)
+  const [isCreatingNewGame, setIsCreatingNewGame] = useState(false)
+  const navigate = useNavigate()
 
   // Auto-start next round when current round is completed
   useEffect(() => {
@@ -61,6 +65,27 @@ export function GameView({ gameId }: GameViewProps) {
       toast.success('New round started!')
     } catch (error) {
       toast.error('Failed to start new round')
+    }
+  }
+
+  const handleNewGameWithSamePlayers = async () => {
+    if (!game) return
+
+    setIsCreatingNewGame(true)
+    try {
+      const playerIds = game.participants.map((p) => p.playerId)
+      const newGameId = await createAndStartGame({
+        name: `${game.name} (Rematch)`,
+        winningPoints: game.winningPoints,
+        playerIds,
+      })
+
+      toast.success('New game created and started!')
+      navigate(`/game/${newGameId}`)
+    } catch (error) {
+      toast.error('Failed to create new game')
+    } finally {
+      setIsCreatingNewGame(false)
     }
   }
 
@@ -138,6 +163,31 @@ export function GameView({ gameId }: GameViewProps) {
                 </div>
               ))}
           </div>
+        </div>
+
+        <div className="mt-8 flex flex-col items-center space-y-4">
+          <div className="text-center">
+            <p className="text-foreground/70 mb-4 text-sm">
+              Want to play again with the same players?
+            </p>
+            <Button
+              onClick={handleNewGameWithSamePlayers}
+              disabled={isCreatingNewGame}
+              size="lg"
+              className="px-8 py-3"
+            >
+              <Play className="mr-2 h-5 w-5" />
+              {isCreatingNewGame ? 'Creating...' : 'New Game with Same Players'}
+            </Button>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => navigate('/games')}
+            size="sm"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Games
+          </Button>
         </div>
       </div>
     )
