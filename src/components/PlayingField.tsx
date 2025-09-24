@@ -10,6 +10,7 @@ export interface Player {
   currentPoints?: number
   totalPoints?: number
   imageStorageId?: Id<'_storage'>
+  initials?: string
 }
 
 export interface PlayingFieldProps {
@@ -119,6 +120,8 @@ export function PlayingField({
                   userId={player._id}
                   size={avatarSize}
                   imageStorageId={player.imageStorageId}
+                  initials={player.initials}
+                  name={player.name}
                 />
                 <div className="mb-2">
                   <div className="mb-1 flex items-center justify-center">

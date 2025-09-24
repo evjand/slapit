@@ -10,6 +10,7 @@ const applicationTables = {
     totalEliminations: v.number(),
     createdBy: v.id('users'),
     imageStorageId: v.optional(v.id('_storage')),
+    initials: v.optional(v.string()),
   }).index('by_creator', ['createdBy']),
 
   games: defineTable({

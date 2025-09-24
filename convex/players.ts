@@ -173,3 +173,35 @@ export const deletePlayer = mutation({
     await ctx.db.delete(args.playerId)
   },
 })
+
+export const updatePlayerInitials = mutation({
+  args: {
+    playerId: v.id('players'),
+    initials: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) {
+      throw new Error('Must be logged in to update player initials')
+    }
+
+    const player = await ctx.db.get(args.playerId)
+    if (!player) {
+      throw new Error('Player not found')
+    }
+
+    if (player.createdBy !== userId) {
+      throw new Error('Not authorized to update this player')
+    }
+
+    // Validate initials (max 3 characters, alphanumeric)
+    const cleanInitials = args.initials.trim().toUpperCase().slice(0, 3)
+    if (!/^[A-Z0-9]+$/.test(cleanInitials)) {
+      throw new Error('Initials must contain only letters and numbers')
+    }
+
+    await ctx.db.patch(args.playerId, {
+      initials: cleanInitials,
+    })
+  },
+})

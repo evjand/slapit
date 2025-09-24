@@ -30,7 +30,11 @@ export function AvatarDemo() {
         <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-6">
           {sampleUserIds.map((userId, index) => (
             <div key={userId} className="text-center">
-              <SimpleUserAvatar userId={userId as any} size="lg" />
+              <SimpleUserAvatar
+                userId={userId as any}
+                size="lg"
+                name={`User ${index + 1}`}
+              />
               <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                 User {index + 1}
               </p>
@@ -66,7 +70,11 @@ export function AvatarDemo() {
         <div className="flex items-center space-x-4">
           {(['sm', 'md', 'lg', 'xl'] as const).map((size) => (
             <div key={size} className="text-center">
-              <SimpleUserAvatar userId={sampleUserIds[0] as any} size={size} />
+              <SimpleUserAvatar
+                userId={sampleUserIds[0] as any}
+                size={size}
+                name="Demo User"
+              />
               <p className="mt-2 text-sm text-gray-600 capitalize dark:text-gray-400">
                 {size}
               </p>

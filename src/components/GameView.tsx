@@ -199,6 +199,16 @@ export function GameView({ gameId }: GameViewProps) {
                       (p) => p._id === currentRound.serverId,
                     )?.imageStorageId
                   }
+                  initials={
+                    currentRound.players.find(
+                      (p) => p._id === currentRound.serverId,
+                    )?.initials
+                  }
+                  name={
+                    currentRound.players.find(
+                      (p) => p._id === currentRound.serverId,
+                    )?.name
+                  }
                 />
                 <span className="font-bold">
                   {
@@ -279,6 +289,8 @@ export function GameView({ gameId }: GameViewProps) {
                       userId={participant.playerId}
                       size="sm"
                       imageStorageId={participant.player?.imageStorageId}
+                      initials={participant.player?.initials}
+                      name={participant.player?.name}
                     />
                     <div className="flex gap-2">
                       <span className="text-lg font-bold">

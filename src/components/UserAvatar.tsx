@@ -2,12 +2,15 @@ import React from 'react'
 import { Id } from '../../convex/_generated/dataModel'
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
+import { cn } from '@/lib/utils'
 
 interface UserAvatarProps {
   userId: Id<'users'> | Id<'players'>
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
   className?: string
   imageStorageId?: Id<'_storage'>
+  initials?: string
+  name?: string
 }
 
 // Generate a deterministic color palette based on user ID
@@ -120,12 +123,23 @@ export function UserAvatar({
   )
 }
 
+// Helper function to generate initials from name
+function generateInitials(name: string): string {
+  return name
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase())
+    .join('')
+    .slice(0, 3)
+}
+
 // Alternative simpler pattern generator for better performance
 export function SimpleUserAvatar({
   userId,
   size = 'md',
   className = '',
   imageStorageId,
+  initials,
+  name,
 }: UserAvatarProps) {
   const imageUrl = useQuery(
     api.players.getImageUrl,
@@ -140,6 +154,14 @@ export function SimpleUserAvatar({
     '2xl': 'w-32 h-32',
   }
 
+  const textSizeClasses = {
+    sm: 'text-lg',
+    md: 'text-xl',
+    lg: 'text-2xl',
+    xl: 'text-4xl',
+    '2xl': 'text-6xl',
+  }
+
   // If we have an image, show it
   if (imageUrl) {
     return (
@@ -151,6 +173,31 @@ export function SimpleUserAvatar({
           alt="Player avatar"
           className="h-full w-full object-cover"
         />
+      </div>
+    )
+  }
+
+  // Determine what initials to show
+  const displayInitials = initials || (name ? generateInitials(name) : '')
+
+  // If we have initials, show them
+  if (displayInitials) {
+    const colors = generateColorPalette(userId)
+    const borderColor = colors[0]
+
+    return (
+      <div
+        className={`${sizeClasses[size]} ${className} bg-accent border-border flex items-center justify-center rounded-full border`}
+        style={{ borderColor }}
+      >
+        <span
+          className={cn(
+            `${textSizeClasses[size]} font-semibold text-black dark:text-white`,
+            displayInitials.length == 3 && 'scale-80',
+          )}
+        >
+          {displayInitials}
+        </span>
       </div>
     )
   }
