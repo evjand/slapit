@@ -135,6 +135,56 @@ export const createAndStartGame = mutation({
   },
 })
 
+export const addParticipantsToGame = mutation({
+  args: {
+    gameId: v.id('games'),
+    playerIds: v.array(v.id('players')),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) {
+      throw new Error('Must be logged in to modify games')
+    }
+
+    const game = await ctx.db.get(args.gameId)
+    if (!game) {
+      throw new Error('Game not found')
+    }
+
+    if (game.createdBy !== userId) {
+      throw new Error('Not authorized to modify this game')
+    }
+
+    if (game.status !== 'active') {
+      throw new Error('Can only add players to active games')
+    }
+
+    // Get existing participants to avoid duplicates
+    const existingParticipants = await ctx.db
+      .query('gameParticipants')
+      .withIndex('by_game', (q) => q.eq('gameId', args.gameId))
+      .collect()
+
+    const existingPlayerIds = new Set(
+      existingParticipants.map((p) => p.playerId),
+    )
+
+    // Add new participants (skip if already in game)
+    for (const playerId of args.playerIds) {
+      if (!existingPlayerIds.has(playerId)) {
+        await ctx.db.insert('gameParticipants', {
+          gameId: args.gameId,
+          playerId,
+          currentPoints: 0,
+          isEliminated: false,
+        })
+      }
+    }
+
+    return { success: true }
+  },
+})
+
 export const completeGame = mutation({
   args: {
     gameId: v.id('games'),

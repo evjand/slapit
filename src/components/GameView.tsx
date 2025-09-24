@@ -10,8 +10,16 @@ import { Table, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
 import { Badge } from './ui/badge'
 import StatusIndicator from './StatusIndicator'
 import { GamePlayingField } from './PlayingField'
-import { Maximize2, Minimize2, RotateCcw, Play, ArrowLeft } from 'lucide-react'
+import {
+  Maximize2,
+  Minimize2,
+  RotateCcw,
+  Play,
+  ArrowLeft,
+  UserPlus,
+} from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { AddPlayersToGame } from './AddPlayersToGame'
 
 interface GameViewProps {
   gameId: Id<'games'>
@@ -26,6 +34,7 @@ export function GameView({ gameId }: GameViewProps) {
   const createAndStartGame = useMutation(api.games.createAndStartGame)
   const [isFocusMode, setIsFocusMode] = useState(false)
   const [isCreatingNewGame, setIsCreatingNewGame] = useState(false)
+  const [showAddPlayers, setShowAddPlayers] = useState(false)
   const navigate = useNavigate()
 
   // Auto-start next round when current round is completed
@@ -211,6 +220,15 @@ export function GameView({ gameId }: GameViewProps) {
             )}
           </div>
           <div className="flex items-center space-x-3">
+            <Button
+              onClick={() => setShowAddPlayers(true)}
+              variant="outline"
+              size="lg"
+              title="Add players to this game"
+            >
+              <UserPlus className="mr-2 h-5 w-5" />
+              Add Players
+            </Button>
             {currentRound?.eliminations &&
               currentRound.eliminations.length > 0 &&
               currentRound.status === 'active' && (
@@ -355,6 +373,17 @@ export function GameView({ gameId }: GameViewProps) {
             </div>
           </div>
         </div>
+
+        {/* Add Players Dialog */}
+        {showAddPlayers && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <AddPlayersToGame
+              gameId={gameId}
+              currentPlayerIds={game?.participants.map((p) => p.playerId) || []}
+              onClose={() => setShowAddPlayers(false)}
+            />
+          </div>
+        )}
       </div>
     )
   }
@@ -362,8 +391,17 @@ export function GameView({ gameId }: GameViewProps) {
   // Normal mode layout
   return (
     <div className="space-y-6">
-      {/* Focus mode toggle */}
-      <div className="flex justify-end">
+      {/* Game controls */}
+      <div className="flex justify-end space-x-2">
+        <Button
+          onClick={() => setShowAddPlayers(true)}
+          variant="outline"
+          size="sm"
+          title="Add players to this game"
+        >
+          <UserPlus className="mr-1 h-4 w-4" />
+          Add Players
+        </Button>
         <Button
           onClick={() => setIsFocusMode(true)}
           variant="outline"
@@ -486,6 +524,17 @@ export function GameView({ gameId }: GameViewProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Add Players Dialog */}
+      {showAddPlayers && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <AddPlayersToGame
+            gameId={gameId}
+            currentPlayerIds={game?.participants.map((p) => p.playerId) || []}
+            onClose={() => setShowAddPlayers(false)}
+          />
+        </div>
+      )}
     </div>
   )
 }
