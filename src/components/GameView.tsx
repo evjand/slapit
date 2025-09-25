@@ -6,7 +6,14 @@ import { useEffect, useState } from 'react'
 import { Button } from './ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { SimpleUserAvatar } from './UserAvatar'
-import { Table, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from './ui/table'
 import { Badge } from './ui/badge'
 import StatusIndicator from './StatusIndicator'
 import { GamePlayingField } from './PlayingField'
@@ -20,6 +27,7 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { AddPlayersToGame } from './AddPlayersToGame'
+import { FullscreenVideoPlayer } from './FullscreenVideoPlayer'
 
 interface GameViewProps {
   gameId: Id<'games'>
@@ -35,6 +43,7 @@ export function GameView({ gameId }: GameViewProps) {
   const [isFocusMode, setIsFocusMode] = useState(false)
   const [isCreatingNewGame, setIsCreatingNewGame] = useState(false)
   const [showAddPlayers, setShowAddPlayers] = useState(false)
+  const [currentVideo, setCurrentVideo] = useState<string | null>(null)
   const navigate = useNavigate()
 
   // Auto-start next round when current round is completed
@@ -96,6 +105,14 @@ export function GameView({ gameId }: GameViewProps) {
     } finally {
       setIsCreatingNewGame(false)
     }
+  }
+
+  const handleReactionVideo = (videoPath: string) => {
+    setCurrentVideo(videoPath)
+  }
+
+  const handleCloseVideo = () => {
+    setCurrentVideo(null)
   }
 
   const handleEliminatePlayer = async (playerId: Id<'players'>) => {
@@ -342,6 +359,32 @@ export function GameView({ gameId }: GameViewProps) {
           )}
         </div>
 
+        {/* Reactions row */}
+        <div className="absolute bottom-32 left-1/2 z-10 -translate-x-1/2 transform">
+          <div className="bg-background/90 rounded-xl border-2 px-6 py-4 backdrop-blur-sm">
+            <div className="flex items-center space-x-4">
+              <span className="text-foreground/70 text-lg font-semibold">
+                Reactions:
+              </span>
+              <Button
+                onClick={() => handleReactionVideo('/jiffed.mp4')}
+                variant="outline"
+                size="lg"
+              >
+                😂 Jiffed
+              </Button>
+              <Button
+                onClick={() => handleReactionVideo('/skatolled.mp4')}
+                variant="outline"
+                size="lg"
+              >
+                🎯 Skatolled
+              </Button>
+              {currentVideo}
+            </div>
+          </div>
+        </div>
+
         {/* Bottom scores overlay */}
         <div className="absolute right-6 bottom-6 left-6 z-10">
           <div className="bg-background/90 rounded-xl border-2 p-6 backdrop-blur-sm">
@@ -383,6 +426,14 @@ export function GameView({ gameId }: GameViewProps) {
               onClose={() => setShowAddPlayers(false)}
             />
           </div>
+        )}
+
+        {/* Fullscreen Video Player */}
+        {currentVideo && (
+          <FullscreenVideoPlayer
+            videoPath={currentVideo}
+            onClose={handleCloseVideo}
+          />
         )}
       </div>
     )
@@ -508,18 +559,20 @@ export function GameView({ gameId }: GameViewProps) {
                   <TableHead>Points</TableHead>
                 </TableRow>
               </TableHeader>
-              {game.participants
-                .sort((a, b) => b.currentPoints - a.currentPoints)
-                .map((participant) => (
-                  <TableRow key={participant.playerId}>
-                    <TableCell className="font-semibold" align="right">
-                      {participant.player?.name}
-                    </TableCell>
-                    <TableCell className="text-primary pr-1 pl-2 font-bold">
-                      {participant.currentPoints}
-                    </TableCell>
-                  </TableRow>
-                ))}
+              <TableBody>
+                {game.participants
+                  .sort((a, b) => b.currentPoints - a.currentPoints)
+                  .map((participant) => (
+                    <TableRow key={participant.playerId}>
+                      <TableCell className="font-semibold" align="right">
+                        {participant.player?.name}
+                      </TableCell>
+                      <TableCell className="text-primary pr-1 pl-2 font-bold">
+                        {participant.currentPoints}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
             </Table>
           </CardContent>
         </Card>
@@ -534,6 +587,14 @@ export function GameView({ gameId }: GameViewProps) {
             onClose={() => setShowAddPlayers(false)}
           />
         </div>
+      )}
+
+      {/* Fullscreen Video Player */}
+      {currentVideo && (
+        <FullscreenVideoPlayer
+          videoPath={currentVideo}
+          onClose={handleCloseVideo}
+        />
       )}
     </div>
   )
