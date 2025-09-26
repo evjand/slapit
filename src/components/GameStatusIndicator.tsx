@@ -1,18 +1,20 @@
-import React from 'react'
 import { Badge } from './ui/badge'
+import { cn } from '@/lib/utils'
 
-interface StatusIndicatorProps {
+interface GameStatusIndicatorProps {
   status: 'setup' | 'active' | 'completed' | 'pending'
   className?: string
   size?: 'sm' | 'md' | 'lg'
 }
 
-export default function StatusIndicator({
+export function GameStatusIndicator({
   status,
-  className = '',
+  className,
   size = 'md',
-}: StatusIndicatorProps) {
-  const getStatusConfig = () => {
+}: GameStatusIndicatorProps) {
+  const getStatusConfig = (
+    status: 'setup' | 'active' | 'completed' | 'pending',
+  ) => {
     switch (status) {
       case 'setup':
         return {
@@ -52,8 +54,6 @@ export default function StatusIndicator({
     }
   }
 
-  const config = getStatusConfig()
-
   const getSizeClasses = () => {
     switch (size) {
       case 'sm':
@@ -65,10 +65,12 @@ export default function StatusIndicator({
     }
   }
 
+  const config = getStatusConfig(status)
+
   return (
     <Badge
       variant={config.variant}
-      className={`${config.className} ${getSizeClasses()} ${className}`}
+      className={cn(config.className, getSizeClasses(), className)}
     >
       {config.label}
     </Badge>

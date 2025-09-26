@@ -34,7 +34,7 @@ import {
   TableRow,
 } from './ui/table'
 import { Badge } from './ui/badge'
-import StatusIndicator from './StatusIndicator'
+import { GameStatusIndicator } from './GameStatusIndicator'
 import { PlayingField } from './PlayingField'
 import {
   Maximize2,
@@ -295,7 +295,7 @@ export function GameView({ gameId, onBack }: GameViewProps) {
         <div className="absolute top-6 right-6 left-6 z-10 flex items-center justify-between">
           <div className="flex items-center space-x-6">
             <h1 className="text-foreground text-4xl font-bold">{game.name}</h1>
-            <StatusIndicator status={game.status} size="lg" />
+            <GameStatusIndicator status={game.status} size="lg" />
             {currentRound && (
               <span className="text-foreground/70 text-2xl">
                 Round {currentRound.roundNumber}
@@ -744,7 +744,7 @@ export function GameView({ gameId, onBack }: GameViewProps) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <span>{game.name}</span>
-              <StatusIndicator status={game.status} />
+              <GameStatusIndicator status={game.status} />
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">

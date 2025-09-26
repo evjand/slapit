@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import { HeatView } from './HeatView'
 import { Button } from './ui/button'
 import { cn } from '@/lib/utils'
+import { GameStatusIndicator } from './GameStatusIndicator'
 import {
   Table,
   TableBody,
@@ -130,17 +131,7 @@ export function LeagueView({ leagueId }: LeagueViewProps) {
                         <h3 className="text-foreground font-semibold">
                           Game {game.heatNumber}
                         </h3>
-                        <span
-                          className={`rounded-full px-2 py-1 text-xs ${
-                            game.status === 'completed'
-                              ? 'bg-green-100 text-green-800'
-                              : game.status === 'active'
-                                ? 'bg-blue-100 text-blue-800'
-                                : 'bg-gray-100 text-gray-800'
-                          }`}
-                        >
-                          {game.status}
-                        </span>
+                        <GameStatusIndicator status={game.status} size="sm" />
                       </div>
 
                       <div className="space-y-2">

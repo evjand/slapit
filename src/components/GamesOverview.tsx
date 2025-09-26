@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Button } from './ui/button'
 import { Link } from 'react-router-dom'
 import { Plus, Play, Trophy, Calendar, Users } from 'lucide-react'
-import { Badge } from './ui/badge'
+import { GameStatusIndicator } from './GameStatusIndicator'
 
 export function GamesOverview() {
   const games = useQuery(api.games.list) || []
@@ -40,12 +40,7 @@ export function GamesOverview() {
                     <div className="flex-1">
                       <div className="mb-2 flex items-center gap-3">
                         <h3 className="text-lg font-semibold">{game.name}</h3>
-                        <Badge
-                          variant="secondary"
-                          className="bg-green-100 text-green-800"
-                        >
-                          Active
-                        </Badge>
+                        <GameStatusIndicator status={game.status} />
                       </div>
                       <div className="text-muted-foreground flex items-center gap-4 text-sm">
                         <div className="flex items-center gap-1">
@@ -95,12 +90,7 @@ export function GamesOverview() {
                     <div className="flex-1">
                       <div className="mb-2 flex items-center gap-3">
                         <h3 className="text-lg font-semibold">{game.name}</h3>
-                        <Badge
-                          variant="secondary"
-                          className="bg-yellow-100 text-yellow-800"
-                        >
-                          Completed
-                        </Badge>
+                        <GameStatusIndicator status={game.status} />
                       </div>
                       <div className="text-muted-foreground flex items-center gap-4 text-sm">
                         <div className="flex items-center gap-1">
