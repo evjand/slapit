@@ -16,7 +16,6 @@ import type {
 import type * as auth from "../auth.js";
 import type * as gameEngine from "../gameEngine.js";
 import type * as games from "../games.js";
-import type * as heatSets from "../heatSets.js";
 import type * as http from "../http.js";
 import type * as leagues from "../leagues.js";
 import type * as players from "../players.js";
@@ -35,7 +34,6 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   gameEngine: typeof gameEngine;
   games: typeof games;
-  heatSets: typeof heatSets;
   http: typeof http;
   leagues: typeof leagues;
   players: typeof players;

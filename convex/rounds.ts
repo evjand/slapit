@@ -6,6 +6,8 @@ import {
   reshuffleRemainingPlayers,
   GamePlayer,
   GameElimination,
+  shouldEndGame,
+  GameMode,
 } from './gameEngine'
 import { api } from './_generated/api'
 
@@ -224,47 +226,43 @@ export const eliminatePlayer = mutation({
           currentPoints: newPoints,
         })
 
-        // Check if game is complete (first to X points)
+        // Check if game is complete using unified logic
         const game = await ctx.db.get(args.gameId)
-        if (game && newPoints >= game.winningPoints) {
-          await ctx.db.patch(args.gameId, {
-            status: 'completed',
-            winner: winnerId,
-          })
+        if (game) {
+          const gameConfig = {
+            mode: game.gameMode as GameMode,
+            winningPoints: game.winningPoints,
+            setsPerGame: game.setsPerGame,
+          }
 
-          // Update player stats for winner
-          const player = await ctx.db.get(winnerId)
-          if (player) {
-            await ctx.db.patch(winnerId, {
-              totalWins: player.totalWins + 1,
-              totalPoints: player.totalPoints + newPoints,
+          const currentState = {
+            maxPoints: newPoints,
+            setsCompleted: game.setsCompleted,
+          }
+
+          if (shouldEndGame(gameConfig.mode, gameConfig, currentState)) {
+            // Complete the game using the unified completion logic
+            await ctx.runMutation(api.games.completeGame, {
+              gameId: args.gameId,
+              winnerId: winnerId,
+            })
+          } else if (game.gameMode === 'fixedSets') {
+            // For fixed sets mode, increment sets completed and start new round
+            const newSetsCompleted = (game.setsCompleted || 0) + 1
+            await ctx.db.patch(args.gameId, {
+              setsCompleted: newSetsCompleted,
+            })
+
+            // Start a new round for the next set
+            await ctx.runMutation(api.rounds.startNewRound, {
+              gameId: args.gameId,
+            })
+          } else {
+            // For firstToX mode, start a new round
+            await ctx.runMutation(api.rounds.startNewRound, {
+              gameId: args.gameId,
             })
           }
-
-          // Update total points stats for all other players
-          const allParticipants = await ctx.db
-            .query('gameParticipants')
-            .withIndex('by_game', (q) => q.eq('gameId', args.gameId))
-            .collect()
-
-          for (const participant of allParticipants) {
-            if (participant.playerId !== winnerId) {
-              const otherPlayer = await ctx.db.get(participant.playerId)
-              if (otherPlayer) {
-                await ctx.db.patch(otherPlayer._id, {
-                  totalPoints:
-                    otherPlayer.totalPoints + participant.currentPoints,
-                })
-              }
-            }
-          }
-
-          // Note: In regular games, we don't track eliminations in player stats
-          // This is only done in league games via leagueParticipants
-        } else {
-          await ctx.runMutation(api.rounds.startNewRound, {
-            gameId: args.gameId,
-          })
         }
       }
     } else if (remainingPlayerIds.length > 1) {

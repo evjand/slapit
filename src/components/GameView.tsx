@@ -30,41 +30,18 @@ import { AddPlayersToGame } from './AddPlayersToGame'
 import { FullscreenVideoPlayer } from './FullscreenVideoPlayer'
 
 interface GameViewProps {
-  gameId?: Id<'games'>
-  heatId?: Id<'heats'>
+  gameId: Id<'games'>
   onBack?: () => void
 }
 
-export function GameView({ gameId, heatId, onBack }: GameViewProps) {
-  // Determine if this is a game or heat
-  const isHeat = !!heatId
-  const isGame = !!gameId
-
-  // Game-specific queries and mutations
-  const game = useQuery(api.games.get, isGame ? { gameId: gameId! } : 'skip')
-  const currentRound = useQuery(
-    api.rounds.getCurrentRound,
-    isGame ? { gameId: gameId! } : 'skip',
-  )
+export function GameView({ gameId, onBack }: GameViewProps) {
+  // Game queries and mutations
+  const game = useQuery(api.games.get, { gameId })
+  const currentRound = useQuery(api.rounds.getCurrentRound, { gameId })
   const startNewRound = useMutation(api.rounds.startNewRound)
   const eliminatePlayer = useMutation(api.rounds.eliminatePlayer)
   const revertLastElimination = useMutation(api.rounds.revertLastElimination)
   const createAndStartGame = useMutation(api.games.createAndStartGame)
-
-  // Heat-specific queries and mutations
-  const heatData = useQuery(
-    api.leagues.getHeat,
-    isHeat ? { heatId: heatId! } : 'skip',
-  )
-  const currentSet = useQuery(
-    api.heatSets.getCurrentSet,
-    isHeat ? { heatId: heatId! } : 'skip',
-  )
-  const startNewSet = useMutation(api.heatSets.startNewSet)
-  const eliminatePlayerFromHeat = useMutation(api.heatSets.eliminatePlayer)
-  const revertLastEliminationFromHeat = useMutation(
-    api.heatSets.revertLastElimination,
-  )
 
   const [isFocusMode, setIsFocusMode] = useState(false)
   const [isCreatingNewGame, setIsCreatingNewGame] = useState(false)
@@ -72,45 +49,16 @@ export function GameView({ gameId, heatId, onBack }: GameViewProps) {
   const [currentVideo, setCurrentVideo] = useState<string | null>(null)
   const navigate = useNavigate()
 
-  // Unified data access
-  const entity = isHeat ? heatData : game
-  const currentSession = isHeat ? currentSet : currentRound
-  const startNewSession = isHeat ? startNewSet : startNewRound
-  const eliminatePlayerMutation = isHeat
-    ? eliminatePlayerFromHeat
-    : eliminatePlayer
-  const revertEliminationMutation = isHeat
-    ? revertLastEliminationFromHeat
-    : revertLastElimination
-
-  // Auto-start next session when current session is completed
+  // Auto-start next round when current round is completed
   useEffect(() => {
-    if (isGame) {
-      // Game logic
-      if (currentRound?.status === 'completed' && game?.status === 'active') {
-        const timer = setTimeout(() => {
-          handleStartNewSession()
-        }, 2000) // 2 second delay to show the completion message
+    if (currentRound?.status === 'completed' && game?.status === 'active') {
+      const timer = setTimeout(() => {
+        handleStartNewRound()
+      }, 2000) // 2 second delay to show the completion message
 
-        return () => clearTimeout(timer)
-      }
-    } else if (isHeat) {
-      // Heat logic
-      if (currentSet?.status === 'completed' && heatData?.status === 'active') {
-        // Check if we can start another set
-        const canStartNewSet =
-          heatData.setsCompleted < (heatData.league?.setsPerHeat || 0)
-
-        if (canStartNewSet) {
-          const timer = setTimeout(() => {
-            handleStartNewSession()
-          }, 2000) // 2 second delay to show the completion message
-
-          return () => clearTimeout(timer)
-        }
-      }
+      return () => clearTimeout(timer)
     }
-  }, [currentSession?.status, entity?.status, isHeat, heatData?.setsCompleted])
+  }, [currentRound?.status, game?.status])
 
   // Keyboard shortcuts for focus mode
   useEffect(() => {
@@ -132,17 +80,12 @@ export function GameView({ gameId, heatId, onBack }: GameViewProps) {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isFocusMode])
 
-  const handleStartNewSession = async () => {
+  const handleStartNewRound = async () => {
     try {
-      if (isGame) {
-        await startNewRound({ gameId: gameId! })
-        toast.success('New round started!')
-      } else if (isHeat) {
-        await startNewSet({ heatId: heatId! })
-        toast.success('New set started!')
-      }
+      await startNewRound({ gameId })
+      toast.success('New round started!')
     } catch (error) {
-      toast.error(`Failed to start new ${isHeat ? 'set' : 'round'}`)
+      toast.error('Failed to start new round')
     }
   }
 
@@ -154,7 +97,9 @@ export function GameView({ gameId, heatId, onBack }: GameViewProps) {
       const playerIds = game.participants.map((p) => p.playerId)
       const newGameId = await createAndStartGame({
         name: `${game.name} (Rematch)`,
+        gameMode: game.gameMode || 'firstToX',
         winningPoints: game.winningPoints,
+        setsPerGame: game.setsPerGame,
         playerIds,
       })
 
@@ -176,22 +121,14 @@ export function GameView({ gameId, heatId, onBack }: GameViewProps) {
   }
 
   const handleEliminatePlayer = async (playerId: Id<'players'>) => {
-    if (!currentSession) return
+    if (!currentRound) return
 
     try {
-      if (isGame) {
-        await eliminatePlayer({
-          gameId: gameId!,
-          roundId: currentRound!._id,
-          playerId,
-        })
-      } else if (isHeat) {
-        await eliminatePlayerFromHeat({
-          heatId: heatId!,
-          setId: currentSet!._id,
-          playerId,
-        })
-      }
+      await eliminatePlayer({
+        gameId,
+        roundId: currentRound._id,
+        playerId,
+      })
       // toast.success('Player eliminated!')
     } catch (error) {
       toast.error('Failed to eliminate player')
@@ -199,21 +136,17 @@ export function GameView({ gameId, heatId, onBack }: GameViewProps) {
   }
 
   const handleRevertElimination = async () => {
-    if (!currentSession) return
+    if (!currentRound) return
 
     try {
-      if (isGame) {
-        await revertLastElimination({ roundId: currentRound!._id })
-      } else if (isHeat) {
-        await revertLastEliminationFromHeat({ setId: currentSet!._id })
-      }
+      await revertLastElimination({ roundId: currentRound._id })
       toast.success('Elimination reverted!')
     } catch (error) {
       toast.error('Failed to revert elimination')
     }
   }
 
-  if (!entity) {
+  if (!game) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-500"></div>
@@ -221,8 +154,7 @@ export function GameView({ gameId, heatId, onBack }: GameViewProps) {
     )
   }
 
-  // Handle game completion
-  if (isGame && game?.status === 'completed') {
+  if (game.status === 'completed') {
     const winner = game.participants.find((p) => p.playerId === game.winner)
     return (
       <div className="rounded-lg border p-8 text-center shadow-sm">
@@ -292,77 +224,7 @@ export function GameView({ gameId, heatId, onBack }: GameViewProps) {
     )
   }
 
-  // Handle heat completion
-  const isHeatComplete =
-    isHeat &&
-    heatData &&
-    heatData.setsCompleted >= (heatData.league?.setsPerHeat || 0)
-
-  if (isHeatComplete) {
-    return (
-      <div className="space-y-6">
-        {onBack && <Button onClick={onBack}>← Back to League</Button>}
-        <div className="rounded-lg border p-6 shadow-sm">
-          <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-600 dark:bg-green-900">
-            <p className="text-center font-medium text-green-800 dark:text-green-200">
-              🏆 Heat Complete! All {heatData.league?.setsPerHeat} sets have
-              been played.
-            </p>
-          </div>
-        </div>
-        {/* Heat Header */}
-        <div className="grid grid-cols-2 items-start gap-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span>Heat {heatData.heatNumber}</span>
-                <StatusIndicator status={heatData.status} />
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="text-lg">
-                Sets: {heatData.setsCompleted} /{' '}
-                {heatData.league?.setsPerHeat || 0}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Scores</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table className="">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead align="right">Player</TableHead>
-                    <TableHead>Points</TableHead>
-                  </TableRow>
-                </TableHeader>
-                {heatData.players
-                  .sort((a, b) => b.totalPoints - a.totalPoints)
-                  .map((participant) => (
-                    <TableRow key={participant._id}>
-                      <TableCell className="font-semibold" align="right">
-                        {participant.name}
-                      </TableCell>
-                      <TableCell className="text-primary pr-1 pl-2 font-bold">
-                        {participant.totalPoints}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-              </Table>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    )
-  }
-
-  // Get active participants
-  const activeParticipants = isGame
-    ? game?.participants.filter((p) => !p.isEliminated) || []
-    : heatData?.players || []
+  const activeParticipants = game.participants.filter((p) => !p.isEliminated)
 
   // Focus mode layout - maximizes playing field visibility
   if (isFocusMode) {
@@ -371,32 +233,27 @@ export function GameView({ gameId, heatId, onBack }: GameViewProps) {
         {/* Focus mode header */}
         <div className="absolute top-6 right-6 left-6 z-10 flex items-center justify-between">
           <div className="flex items-center space-x-6">
-            <h1 className="text-foreground text-4xl font-bold">
-              {isGame ? game?.name : `Heat ${heatData?.heatNumber}`}
-            </h1>
-            <StatusIndicator status={entity?.status} size="lg" />
-            {currentSession && (
+            <h1 className="text-foreground text-4xl font-bold">{game.name}</h1>
+            <StatusIndicator status={game.status} size="lg" />
+            {currentRound && (
               <span className="text-foreground/70 text-2xl">
-                {isHeat ? 'Set' : 'Round'}{' '}
-                {isHeat ? currentSet?.setNumber : currentRound?.roundNumber}
+                Round {currentRound.roundNumber}
               </span>
             )}
           </div>
           <div className="flex items-center space-x-3">
-            {isGame && (
-              <Button
-                onClick={() => setShowAddPlayers(true)}
-                variant="outline"
-                size="lg"
-                title="Add players to this game"
-              >
-                <UserPlus className="mr-2 h-5 w-5" />
-                Add Players
-              </Button>
-            )}
-            {currentSession?.eliminations &&
-              currentSession.eliminations.length > 0 &&
-              currentSession.status === 'active' && (
+            <Button
+              onClick={() => setShowAddPlayers(true)}
+              variant="outline"
+              size="lg"
+              title="Add players to this game"
+            >
+              <UserPlus className="mr-2 h-5 w-5" />
+              Add Players
+            </Button>
+            {currentRound?.eliminations &&
+              currentRound.eliminations.length > 0 &&
+              currentRound.status === 'active' && (
                 <Button
                   onClick={handleRevertElimination}
                   variant="outline"
@@ -419,34 +276,34 @@ export function GameView({ gameId, heatId, onBack }: GameViewProps) {
         </div>
 
         {/* Server indicator */}
-        {currentSession && (
+        {currentRound && (
           <div className="absolute top-24 left-1/2 z-10 -translate-x-1/2 transform">
             <div className="bg-background/90 rounded-xl border-2 px-8 py-4 backdrop-blur-sm">
               <div className="flex items-center gap-2 text-center text-2xl">
                 <span className="text-foreground/70 mr-4">Serve: </span>
                 <SimpleUserAvatar
-                  userId={currentSession.serverId as Id<'players'>}
+                  userId={currentRound.serverId as Id<'players'>}
                   size="md"
                   imageStorageId={
-                    currentSession.players?.find(
-                      (p) => p?._id === currentSession.serverId,
+                    currentRound.players.find(
+                      (p) => p._id === currentRound.serverId,
                     )?.imageStorageId
                   }
                   initials={
-                    currentSession.players?.find(
-                      (p) => p?._id === currentSession.serverId,
+                    currentRound.players.find(
+                      (p) => p._id === currentRound.serverId,
                     )?.initials
                   }
                   name={
-                    currentSession.players?.find(
-                      (p) => p?._id === currentSession.serverId,
+                    currentRound.players.find(
+                      (p) => p._id === currentRound.serverId,
                     )?.name
                   }
                 />
                 <span className="font-bold">
                   {
-                    currentSession.players?.find(
-                      (p) => p?._id === currentSession.serverId,
+                    currentRound.players.find(
+                      (p) => p._id === currentRound.serverId,
                     )?.name
                   }
                 </span>
@@ -457,49 +314,36 @@ export function GameView({ gameId, heatId, onBack }: GameViewProps) {
 
         {/* Large playing field */}
         <div className="flex h-full items-center justify-center pt-32 pb-12">
-          {currentSession ? (
+          {currentRound ? (
             <div className="w-full">
               <PlayingField
-                players={
-                  currentSession.players
-                    ?.filter((p) => p?._id !== null)
-                    .map((p) => ({
-                      _id: p?._id,
-                      name: p?.name,
-                      currentPoints: (p as any)?.currentPoints,
-                      totalPoints: p?.totalPoints,
-                      imageStorageId: p?.imageStorageId,
-                      initials: p?.initials,
-                    })) || []
-                }
-                serverId={currentSession.serverId}
+                players={currentRound.players || []}
+                serverId={currentRound.serverId}
                 onPlayerClick={handleEliminatePlayer}
                 showServerIndicator={true}
-                showPoints={!isHeat}
+                showPoints={true}
                 pointsLabel="pts"
                 avatarSize={
-                  currentSession.players && currentSession.players.length > 6
+                  currentRound.players && currentRound.players.length > 6
                     ? 'xl'
                     : '2xl'
                 }
                 layout="horizontal"
-                disabled={currentSession.status === 'completed'}
+                disabled={currentRound.status === 'completed'}
                 className="!p-4"
               />
-              {currentSession.status === 'completed' && (
+              {currentRound.status === 'completed' && (
                 <div className="mt-12 rounded-xl border-2 border-green-200 bg-green-50 p-8 text-center">
                   <p className="text-3xl font-bold text-green-800">
-                    🎉 {isHeat ? 'Set' : 'Round'} Complete! Winner:{' '}
+                    🎉 Round Complete! Winner:{' '}
                     {
-                      currentSession.players?.find(
-                        (p) => p?._id === currentSession.winner,
+                      currentRound.players.find(
+                        (p) => p._id === currentRound.winner,
                       )?.name
                     }
                   </p>
                   <p className="mt-4 text-2xl text-green-700">
-                    {isHeat && isHeatComplete
-                      ? 'Heat complete! All sets have been played.'
-                      : `Starting next ${isHeat ? 'set' : 'round'} automatically...`}
+                    Starting next round automatically...
                   </p>
                 </div>
               )}
@@ -513,12 +357,12 @@ export function GameView({ gameId, heatId, onBack }: GameViewProps) {
                 {activeParticipants.length} players ready to play
               </p>
               <Button
-                onClick={handleStartNewSession}
+                onClick={handleStartNewRound}
                 disabled={activeParticipants.length < 2}
                 size="lg"
                 className="px-12 py-6 text-xl"
               >
-                Start new {isHeat ? 'set' : 'round'}
+                Start new round
               </Button>
             </div>
           )}
@@ -554,70 +398,33 @@ export function GameView({ gameId, heatId, onBack }: GameViewProps) {
         <div className="absolute right-6 bottom-6 left-6 z-10">
           <div className="bg-background/90 rounded-xl border-2 p-6 backdrop-blur-sm">
             <div className="flex items-center justify-center space-x-8 overflow-auto">
-              {isGame
-                ? game?.participants
-                    ?.sort((a, b) => b.currentPoints - a.currentPoints)
-                    .map((participant) => (
-                      <div
-                        key={participant.playerId}
-                        className="flex items-center space-x-4"
-                      >
-                        <SimpleUserAvatar
-                          userId={participant.playerId}
-                          size="sm"
-                          imageStorageId={participant.player?.imageStorageId}
-                          initials={participant.player?.initials}
-                          name={participant.player?.name}
-                        />
-                        <div className="flex gap-2">
-                          <span className="text-lg font-bold">
-                            {participant.player?.name}
-                          </span>
-                          <span className="text-primary text-lg font-bold">
-                            {participant.currentPoints}
-                          </span>
-                        </div>
-                      </div>
-                    ))
-                : heatData?.players
-                    ?.sort((a, b) => b.totalPoints - a.totalPoints)
-                    .filter((participant) => participant._id) // Filter out participants with undefined _id
-                    .map((participant) => (
-                      <div
-                        key={participant._id}
-                        className="flex items-center space-x-4"
-                      >
-                        <SimpleUserAvatar
-                          userId={participant._id as Id<'players'>}
-                          size="sm"
-                          imageStorageId={participant.imageStorageId}
-                          initials={participant.initials}
-                          name={participant.name}
-                        />
-                        <div className="flex gap-2">
-                          <span className="text-lg font-bold">
-                            {participant.name}
-                          </span>
-                          <span className="text-primary text-lg font-bold">
-                            {participant.totalPoints}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+              {game.participants
+                ?.sort((a, b) => b.currentPoints - a.currentPoints)
+                .map((participant) => (
+                  <div
+                    key={participant.playerId}
+                    className="flex items-center space-x-4"
+                  >
+                    <SimpleUserAvatar
+                      userId={participant.playerId}
+                      size="sm"
+                      imageStorageId={participant.player?.imageStorageId}
+                      initials={participant.player?.initials}
+                      name={participant.player?.name}
+                    />
+                    <div className="flex gap-2">
+                      <span className="text-lg font-bold">
+                        {participant.player?.name}
+                      </span>
+                      <span className="text-primary text-lg font-bold">
+                        {participant.currentPoints}
+                      </span>
+                    </div>
+                  </div>
+                ))}
             </div>
           </div>
         </div>
-
-        {/* Add Players Dialog - Only for games */}
-        {showAddPlayers && isGame && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <AddPlayersToGame
-              gameId={gameId!}
-              currentPlayerIds={game?.participants.map((p) => p.playerId) || []}
-              onClose={() => setShowAddPlayers(false)}
-            />
-          </div>
-        )}
 
         {/* Fullscreen Video Player */}
         {currentVideo && (
@@ -633,22 +440,20 @@ export function GameView({ gameId, heatId, onBack }: GameViewProps) {
   // Normal mode layout
   return (
     <div className="space-y-6">
-      {/* Back button for heats */}
-      {onBack && <Button onClick={onBack}>← Back to League</Button>}
+      {/* Back button */}
+      {onBack && <Button onClick={onBack}>← Back to Games</Button>}
 
       {/* Game controls */}
       <div className="flex justify-end space-x-2">
-        {isGame && (
-          <Button
-            onClick={() => setShowAddPlayers(true)}
-            variant="outline"
-            size="sm"
-            title="Add players to this game"
-          >
-            <UserPlus className="mr-1 h-4 w-4" />
-            Add Players
-          </Button>
-        )}
+        <Button
+          onClick={() => setShowAddPlayers(true)}
+          variant="outline"
+          size="sm"
+          title="Add players to this game"
+        >
+          <UserPlus className="mr-1 h-4 w-4" />
+          Add Players
+        </Button>
         <Button
           onClick={() => setIsFocusMode(true)}
           variant="outline"
@@ -660,18 +465,17 @@ export function GameView({ gameId, heatId, onBack }: GameViewProps) {
         </Button>
       </div>
 
-      {/* Current Session */}
-      {currentSession ? (
+      {/* Current Round */}
+      {currentRound ? (
         <div className="rounded-lg border p-6 shadow-sm">
           <div className="mb-6 flex items-center justify-between">
             <h2 className="text-foreground text-2xl font-bold">
-              {isHeat ? 'Set' : 'Round'}{' '}
-              {isHeat ? currentSet?.setNumber : currentRound?.roundNumber}
+              Round {currentRound.roundNumber}
             </h2>
             <div className="flex space-x-3">
-              {currentSession.eliminations &&
-                currentSession.eliminations.length > 0 &&
-                currentSession.status === 'active' && (
+              {currentRound.eliminations &&
+                currentRound.eliminations.length > 0 &&
+                currentRound.status === 'active' && (
                   <Button onClick={handleRevertElimination} variant="outline">
                     Revert Last Elimination
                   </Button>
@@ -684,8 +488,8 @@ export function GameView({ gameId, heatId, onBack }: GameViewProps) {
               <span className="text-foreground/70">Serve: </span>
               <span className="font-semibold">
                 {
-                  currentSession.players?.find(
-                    (p) => p?._id === currentSession.serverId,
+                  currentRound.players?.find(
+                    (p) => p._id === currentRound.serverId,
                   )?.name
                 }
               </span>
@@ -694,40 +498,27 @@ export function GameView({ gameId, heatId, onBack }: GameViewProps) {
 
           {/* Playing Field */}
           <PlayingField
-            players={
-              currentSession.players
-                ?.filter((p) => p?._id !== null)
-                .map((p) => ({
-                  _id: p?._id,
-                  name: p?.name,
-                  currentPoints: (p as any)?.currentPoints,
-                  totalPoints: p?.totalPoints,
-                  imageStorageId: p?.imageStorageId,
-                  initials: p?.initials,
-                })) || []
-            }
-            serverId={currentSession.serverId}
+            players={currentRound.players || []}
+            serverId={currentRound.serverId}
             onPlayerClick={handleEliminatePlayer}
             showServerIndicator={true}
-            showPoints={!isHeat}
+            showPoints={true}
             pointsLabel="pts"
             layout="horizontal"
-            disabled={currentSession.status === 'completed'}
+            disabled={currentRound.status === 'completed'}
           />
-          {currentSession.status === 'completed' && (
+          {currentRound.status === 'completed' && (
             <div className="mt-6 rounded-lg border border-green-200 bg-green-50 p-4">
               <p className="text-center font-medium text-green-800">
-                🎉 {isHeat ? 'Set' : 'Round'} Complete! Winner:{' '}
+                🎉 Round Complete! Winner:{' '}
                 {
-                  currentSession.players?.find(
-                    (p) => p?._id === currentSession.winner,
+                  currentRound.players?.find(
+                    (p) => p._id === currentRound.winner,
                   )?.name
                 }
               </p>
               <p className="mt-1 text-center text-sm text-green-700">
-                {isHeat && isHeatComplete
-                  ? 'Heat complete! All sets have been played.'
-                  : `Starting next ${isHeat ? 'set' : 'round'} automatically...`}
+                Starting next round automatically...
               </p>
             </div>
           )}
@@ -741,35 +532,28 @@ export function GameView({ gameId, heatId, onBack }: GameViewProps) {
             {activeParticipants.length} players ready to play
           </p>
           <Button
-            onClick={handleStartNewSession}
+            onClick={handleStartNewRound}
             disabled={activeParticipants.length < 2}
           >
-            Start new {isHeat ? 'set' : 'round'}
+            Start new round
           </Button>
         </div>
       )}
-      {/* Entity Header */}
+      {/* Game Header */}
       <div className="grid grid-cols-2 items-start gap-8">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <span>
-                {isGame ? game?.name : `Heat ${heatData?.heatNumber}`}
-              </span>
-              <StatusIndicator status={entity?.status} />
+              <span>{game.name}</span>
+              <StatusIndicator status={game.status} />
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {isGame ? (
-              <div className="text-lg">
-                Points to win: {game?.winningPoints}
-              </div>
-            ) : (
-              <div className="text-lg">
-                Sets: {heatData?.setsCompleted} /{' '}
-                {heatData?.league?.setsPerHeat || 0}
-              </div>
-            )}
+            <div className="text-lg">
+              {game.gameMode === 'firstToX'
+                ? `Points to win: ${game.winningPoints}`
+                : `Sets: ${game.setsCompleted} / ${game.setsPerGame}`}
+            </div>
           </CardContent>
         </Card>
 
@@ -786,44 +570,30 @@ export function GameView({ gameId, heatId, onBack }: GameViewProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {isGame
-                  ? game?.participants
-                      .sort((a, b) => b.currentPoints - a.currentPoints)
-                      .map((participant) => (
-                        <TableRow key={participant.playerId}>
-                          <TableCell className="font-semibold" align="right">
-                            {participant.player?.name}
-                          </TableCell>
-                          <TableCell className="text-primary pr-1 pl-2 font-bold">
-                            {participant.currentPoints}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                  : heatData?.players
-                      ?.sort((a, b) => b.totalPoints - a.totalPoints)
-                      .filter((participant) => participant._id) // Filter out participants with undefined _id
-                      .map((participant) => (
-                        <TableRow key={participant._id}>
-                          <TableCell className="font-semibold" align="right">
-                            {participant.name}
-                          </TableCell>
-                          <TableCell className="text-primary pr-1 pl-2 font-bold">
-                            {participant.totalPoints}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                {game.participants
+                  .sort((a, b) => b.currentPoints - a.currentPoints)
+                  .map((participant) => (
+                    <TableRow key={participant.playerId}>
+                      <TableCell className="font-semibold" align="right">
+                        {participant.player?.name}
+                      </TableCell>
+                      <TableCell className="text-primary pr-1 pl-2 font-bold">
+                        {participant.currentPoints}
+                      </TableCell>
+                    </TableRow>
+                  ))}
               </TableBody>
             </Table>
           </CardContent>
         </Card>
       </div>
 
-      {/* Add Players Dialog - Only for games */}
-      {showAddPlayers && isGame && (
+      {/* Add Players Dialog */}
+      {showAddPlayers && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <AddPlayersToGame
-            gameId={gameId!}
-            currentPlayerIds={game?.participants.map((p) => p.playerId) || []}
+            gameId={gameId}
+            currentPlayerIds={game.participants.map((p) => p.playerId)}
             onClose={() => setShowAddPlayers(false)}
           />
         </div>

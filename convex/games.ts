@@ -2,6 +2,14 @@ import { query, mutation } from './_generated/server'
 import { v } from 'convex/values'
 import { getAuthUserId } from '@convex-dev/auth/server'
 import { api } from './_generated/api'
+import {
+  updateGameAnalytics,
+  updateLeagueAnalytics,
+  updatePlayerGlobalStats,
+  updateLeagueParticipantStats,
+  shouldEndGame,
+  GameMode,
+} from './gameEngine'
 
 export const list = query({
   args: {},
@@ -61,8 +69,14 @@ export const get = query({
 export const create = mutation({
   args: {
     name: v.string(),
-    winningPoints: v.number(),
+    gameMode: v.union(v.literal('firstToX'), v.literal('fixedSets')),
+    winningPoints: v.optional(v.number()),
+    setsPerGame: v.optional(v.number()),
     playerIds: v.array(v.id('players')),
+    trackAnalytics: v.optional(v.boolean()),
+    leagueId: v.optional(v.id('leagues')),
+    leagueRound: v.optional(v.number()),
+    leagueHeatNumber: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx)
@@ -70,10 +84,26 @@ export const create = mutation({
       throw new Error('Must be logged in to create games')
     }
 
+    // Validate game mode configuration
+    if (args.gameMode === 'firstToX' && !args.winningPoints) {
+      throw new Error('winningPoints is required for firstToX mode')
+    }
+    if (args.gameMode === 'fixedSets' && !args.setsPerGame) {
+      throw new Error('setsPerGame is required for fixedSets mode')
+    }
+
     const gameId = await ctx.db.insert('games', {
       name: args.name,
+      gameMode: args.gameMode,
       winningPoints: args.winningPoints,
+      setsPerGame: args.setsPerGame,
       status: 'setup',
+      setsCompleted: 0,
+      leagueId: args.leagueId,
+      leagueRound: args.leagueRound,
+      leagueHeatNumber: args.leagueHeatNumber,
+      trackAnalytics: args.trackAnalytics ?? true,
+      trackLeagueAnalytics: !!args.leagueId,
       createdBy: userId,
     })
 
@@ -101,8 +131,14 @@ export const startGame = mutation({
 export const createAndStartGame = mutation({
   args: {
     name: v.string(),
-    winningPoints: v.number(),
+    gameMode: v.union(v.literal('firstToX'), v.literal('fixedSets')),
+    winningPoints: v.optional(v.number()),
+    setsPerGame: v.optional(v.number()),
     playerIds: v.array(v.id('players')),
+    trackAnalytics: v.optional(v.boolean()),
+    leagueId: v.optional(v.id('leagues')),
+    leagueRound: v.optional(v.number()),
+    leagueHeatNumber: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx)
@@ -110,11 +146,27 @@ export const createAndStartGame = mutation({
       throw new Error('Must be logged in to create games')
     }
 
+    // Validate game mode configuration
+    if (args.gameMode === 'firstToX' && !args.winningPoints) {
+      throw new Error('winningPoints is required for firstToX mode')
+    }
+    if (args.gameMode === 'fixedSets' && !args.setsPerGame) {
+      throw new Error('setsPerGame is required for fixedSets mode')
+    }
+
     // Create the game with active status
     const gameId = await ctx.db.insert('games', {
       name: args.name,
+      gameMode: args.gameMode,
       winningPoints: args.winningPoints,
+      setsPerGame: args.setsPerGame,
       status: 'active',
+      setsCompleted: 0,
+      leagueId: args.leagueId,
+      leagueRound: args.leagueRound,
+      leagueHeatNumber: args.leagueHeatNumber,
+      trackAnalytics: args.trackAnalytics ?? true,
+      trackLeagueAnalytics: !!args.leagueId,
       createdBy: userId,
     })
 
@@ -191,9 +243,86 @@ export const completeGame = mutation({
     winnerId: v.id('players'),
   },
   handler: async (ctx, args) => {
+    const game = await ctx.db.get(args.gameId)
+    if (!game) {
+      throw new Error('Game not found')
+    }
+
+    // Update game status
     await ctx.db.patch(args.gameId, {
       status: 'completed',
       winner: args.winnerId,
     })
+
+    // Get all participants for analytics
+    const participants = await ctx.db
+      .query('gameParticipants')
+      .withIndex('by_game', (q) => q.eq('gameId', args.gameId))
+      .collect()
+
+    // Get eliminations for each player
+    const eliminations = await ctx.db
+      .query('eliminations')
+      .withIndex('by_game', (q) => q.eq('gameId', args.gameId))
+      .filter((q) => q.eq(q.field('isReverted'), false))
+      .collect()
+
+    // Track analytics for each participant
+    for (const participant of participants) {
+      const playerEliminations = eliminations.filter(
+        (e) => e.eliminatorPlayerId === participant.playerId,
+      ).length
+
+      const isWinner = participant.playerId === args.winnerId
+      const points = participant.currentPoints
+      const wins = isWinner ? 1 : 0
+      const gamesPlayed = 1
+
+      // Update game-specific analytics
+      if (game.trackAnalytics) {
+        await updateGameAnalytics(
+          ctx,
+          args.gameId,
+          participant.playerId,
+          points,
+          playerEliminations,
+          wins,
+          gamesPlayed,
+        )
+
+        // Update global player stats
+        await updatePlayerGlobalStats(
+          ctx,
+          participant.playerId,
+          points,
+          playerEliminations,
+          wins,
+        )
+      }
+
+      // Update league analytics if this is a league game
+      if (game.trackLeagueAnalytics && game.leagueId) {
+        await updateLeagueAnalytics(
+          ctx,
+          game.leagueId,
+          args.gameId,
+          participant.playerId,
+          points,
+          playerEliminations,
+          wins,
+          gamesPlayed,
+        )
+
+        // Update league participant stats
+        await updateLeagueParticipantStats(
+          ctx,
+          game.leagueId,
+          participant.playerId,
+          points,
+          playerEliminations,
+          gamesPlayed,
+        )
+      }
+    }
   },
 })

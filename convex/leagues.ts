@@ -1,6 +1,7 @@
 import { query, mutation } from './_generated/server'
 import { v } from 'convex/values'
 import { getAuthUserId } from '@convex-dev/auth/server'
+import { api } from './_generated/api'
 
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array]
@@ -130,15 +131,17 @@ export const generateHeats = mutation({
 
     const newRound = league.currentRound + 1
 
-    // Create heat records
+    // Create games instead of heats
     for (let i = 0; i < heats.length; i++) {
-      await ctx.db.insert('heats', {
-        leagueId: args.leagueId,
-        roundNumber: newRound,
-        heatNumber: i + 1,
+      await ctx.runMutation(api.games.create, {
+        name: `Heat ${i + 1} - Round ${newRound}`,
+        gameMode: 'fixedSets',
+        setsPerGame: league.setsPerHeat,
         playerIds: heats[i],
-        status: 'pending',
-        setsCompleted: 0,
+        trackAnalytics: false, // Don't track to global stats
+        leagueId: args.leagueId,
+        leagueRound: newRound,
+        leagueHeatNumber: i + 1,
       })
     }
 
@@ -165,71 +168,97 @@ export const getHeats = query({
 
     const round = args.roundNumber ?? league.currentRound
 
-    const heats = await ctx.db
-      .query('heats')
+    // Query games instead of heats
+    const games = await ctx.db
+      .query('games')
       .withIndex('by_league_round', (q) =>
-        q.eq('leagueId', args.leagueId).eq('roundNumber', round),
+        q.eq('leagueId', args.leagueId).eq('leagueRound', round),
       )
       .collect()
 
-    const heatsWithPlayers = await Promise.all(
-      heats.map(async (heat) => {
+    const gamesWithPlayers = await Promise.all(
+      games.map(async (game) => {
+        // Get participants for this game
+        const participants = await ctx.db
+          .query('gameParticipants')
+          .withIndex('by_game', (q) => q.eq('gameId', game._id))
+          .collect()
+
         const players = await Promise.all(
-          heat.playerIds.map(async (playerId) => {
-            const player = await ctx.db.get(playerId)
-            const participant = await ctx.db
+          participants.map(async (participant) => {
+            const player = await ctx.db.get(participant.playerId)
+            const leagueParticipant = await ctx.db
               .query('leagueParticipants')
               .withIndex('by_league', (q) => q.eq('leagueId', args.leagueId))
-              .filter((q) => q.eq(q.field('playerId'), playerId))
+              .filter((q) => q.eq(q.field('playerId'), participant.playerId))
               .first()
 
             return {
               ...player,
-              totalPoints: participant?.totalPoints || 0,
-              totalEliminations: participant?.totalEliminations || 0,
+              totalPoints: leagueParticipant?.totalPoints || 0,
+              totalEliminations: leagueParticipant?.totalEliminations || 0,
             }
           }),
         )
 
         return {
-          ...heat,
+          _id: game._id,
+          leagueId: game.leagueId,
+          roundNumber: game.leagueRound,
+          heatNumber: game.leagueHeatNumber,
+          playerIds: participants.map((p) => p.playerId),
+          status: game.status,
+          setsCompleted: game.setsCompleted,
           players,
         }
       }),
     )
 
-    return heatsWithPlayers
+    return gamesWithPlayers
   },
 })
 
 export const getHeat = query({
-  args: { heatId: v.id('heats') },
+  args: { heatId: v.id('games') }, // Now takes a game ID instead of heat ID
   handler: async (ctx, args) => {
-    const heat = await ctx.db.get(args.heatId)
-    if (!heat) {
+    const game = await ctx.db.get(args.heatId)
+    if (!game || !game.leagueId) {
       return null
     }
 
-    const league = await ctx.db.get(heat.leagueId)
+    const league = await ctx.db.get(game.leagueId)
+
+    // Get participants for this game
+    const participants = await ctx.db
+      .query('gameParticipants')
+      .withIndex('by_game', (q) => q.eq('gameId', args.heatId))
+      .collect()
+
     const players = await Promise.all(
-      heat.playerIds.map(async (playerId) => {
-        const player = await ctx.db.get(playerId)
-        const participant = await ctx.db
+      participants.map(async (participant) => {
+        const player = await ctx.db.get(participant.playerId)
+        const leagueParticipant = await ctx.db
           .query('leagueParticipants')
-          .withIndex('by_league', (q) => q.eq('leagueId', heat.leagueId))
-          .filter((q) => q.eq(q.field('playerId'), playerId))
+          .withIndex('by_league', (q) => q.eq('leagueId', game.leagueId!))
+          .filter((q) => q.eq(q.field('playerId'), participant.playerId))
           .first()
 
         return {
           ...player,
-          totalPoints: participant?.totalPoints || 0,
-          totalEliminations: participant?.totalEliminations || 0,
+          totalPoints: leagueParticipant?.totalPoints || 0,
+          totalEliminations: leagueParticipant?.totalEliminations || 0,
         }
       }),
     )
 
     return {
-      ...heat,
+      _id: game._id,
+      leagueId: game.leagueId,
+      roundNumber: game.leagueRound,
+      heatNumber: game.leagueHeatNumber,
+      playerIds: participants.map((p) => p.playerId),
+      status: game.status,
+      setsCompleted: game.setsCompleted,
       league,
       players,
     }
