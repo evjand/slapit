@@ -22,6 +22,7 @@ export function GameSetup({ onGameCreated }: GameSetupProps) {
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<Id<'players'>[]>(
     [],
   )
+  const [trackAnalytics, setTrackAnalytics] = useState(true)
   const [isCreating, setIsCreating] = useState(false)
 
   const handlePlayerToggle = (playerId: Id<'players'>) => {
@@ -48,6 +49,7 @@ export function GameSetup({ onGameCreated }: GameSetupProps) {
         }),
         winningPoints,
         playerIds: selectedPlayerIds,
+        trackAnalytics,
       })
 
       toast.success('Game created and started!')
@@ -82,6 +84,21 @@ export function GameSetup({ onGameCreated }: GameSetupProps) {
               onChange={(e) => setWinningPoints(parseInt(e.target.value) || 1)}
               disabled={isCreating}
             />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="trackAnalytics"
+              checked={trackAnalytics}
+              onCheckedChange={(checked) => setTrackAnalytics(!!checked)}
+              disabled={isCreating}
+            />
+            <Label
+              htmlFor="trackAnalytics"
+              className="text-foreground/70 text-sm font-medium"
+            >
+              Track wins and points (disable for testing)
+            </Label>
           </div>
 
           <div>

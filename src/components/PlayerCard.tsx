@@ -147,12 +147,19 @@ export function PlayerCard({ player }: { player: Player }) {
           <div className="flex items-center gap-4">
             <SimpleUserAvatar
               userId={player._id!}
-              size="sm"
+              size="lg"
               imageStorageId={player.imageStorageId}
               initials={player.initials}
               name={player.name}
             />
-            {player.name}
+            <div>
+              <div className="text-xl font-bold">{player.name}</div>
+              {player.initials && (
+                <div className="text-muted-foreground text-sm">
+                  {player.initials}
+                </div>
+              )}
+            </div>
           </div>
         </CardTitle>
         <CardAction>
@@ -244,7 +251,7 @@ export function PlayerCard({ player }: { player: Player }) {
           playerName={player.name}
         />
 
-        {isEditingInitials ? (
+        {isEditingInitials && (
           <div className="space-y-3">
             <div>
               <label className="text-sm font-medium">
@@ -271,17 +278,6 @@ export function PlayerCard({ player }: { player: Player }) {
               >
                 Cancel
               </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="text-foreground/70 space-y-2 text-xs">
-            <div className="flex gap-1">
-              <span>Games Won:</span>
-              <span className="font-medium">{player.totalWins}</span>
-            </div>
-            <div className="flex gap-1">
-              <span>Total Points:</span>
-              <span className="font-medium">{player.totalPoints}</span>
             </div>
           </div>
         )}
