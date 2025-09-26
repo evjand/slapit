@@ -16,6 +16,16 @@ import { Button } from './ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { SimpleUserAvatar } from './UserAvatar'
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from './ui/alert-dialog'
+import {
   Table,
   TableBody,
   TableCell,
@@ -57,6 +67,9 @@ export function GameView({ gameId, onBack }: GameViewProps) {
   const [isCreatingNewGame, setIsCreatingNewGame] = useState(false)
   const [showAddPlayers, setShowAddPlayers] = useState(false)
   const [currentVideo, setCurrentVideo] = useState<string | null>(null)
+  const [showEliminationConfirm, setShowEliminationConfirm] = useState(false)
+  const [playerToEliminate, setPlayerToEliminate] =
+    useState<Id<'players'> | null>(null)
   const navigate = useNavigate()
 
   // Auto-start next round when current round is completed
@@ -133,6 +146,24 @@ export function GameView({ gameId, onBack }: GameViewProps) {
   const handleEliminatePlayer = async (playerId: Id<'players'>) => {
     if (!currentRound) return
 
+    // Check if this would be the final elimination (only 2 players left)
+    const remainingPlayers =
+      currentRound.currentPlayerOrder?.filter((id) => id !== playerId) || []
+
+    if (remainingPlayers.length === 1) {
+      // Show confirmation dialog for final elimination
+      setPlayerToEliminate(playerId)
+      setShowEliminationConfirm(true)
+      return
+    }
+
+    // Proceed with elimination if not the final one
+    await performElimination(playerId)
+  }
+
+  const performElimination = async (playerId: Id<'players'>) => {
+    if (!currentRound) return
+
     try {
       await eliminatePlayer({
         gameId,
@@ -143,6 +174,14 @@ export function GameView({ gameId, onBack }: GameViewProps) {
     } catch (error) {
       toast.error('Failed to eliminate player')
     }
+  }
+
+  const handleConfirmElimination = async () => {
+    if (playerToEliminate) {
+      await performElimination(playerToEliminate)
+    }
+    setShowEliminationConfirm(false)
+    setPlayerToEliminate(null)
   }
 
   const handleRevertElimination = async () => {
@@ -455,6 +494,69 @@ export function GameView({ gameId, onBack }: GameViewProps) {
             onClose={handleCloseVideo}
           />
         )}
+
+        {/* Elimination Confirmation Dialog */}
+        <AlertDialog
+          open={showEliminationConfirm}
+          onOpenChange={setShowEliminationConfirm}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Final Elimination</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will eliminate the following player and end the round:
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            {playerToEliminate && (
+              <div className="flex items-center justify-center py-4">
+                <div className="flex flex-col items-center space-y-2">
+                  <SimpleUserAvatar
+                    userId={playerToEliminate}
+                    name={
+                      game?.participants.find(
+                        (p) => p.playerId === playerToEliminate,
+                      )?.player?.name || 'Unknown Player'
+                    }
+                    imageStorageId={
+                      game?.participants.find(
+                        (p) => p.playerId === playerToEliminate,
+                      )?.player?.imageStorageId
+                    }
+                    initials={
+                      game?.participants.find(
+                        (p) => p.playerId === playerToEliminate,
+                      )?.player?.initials
+                    }
+                    size="2xl"
+                  />
+                  <div className="text-center">
+                    <p className="text-lg font-semibold">
+                      {game?.participants.find(
+                        (p) => p.playerId === playerToEliminate,
+                      )?.player?.name || 'Unknown Player'}
+                    </p>
+                    <p className="text-muted-foreground text-sm">
+                      Will be eliminated
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            <AlertDialogDescription className="text-center">
+              Are you sure you want to continue?
+            </AlertDialogDescription>
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                onClick={() => setShowEliminationConfirm(false)}
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmElimination}>
+                Eliminate Player
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     )
   }
@@ -628,6 +730,67 @@ export function GameView({ gameId, onBack }: GameViewProps) {
           onClose={handleCloseVideo}
         />
       )}
+
+      {/* Elimination Confirmation Dialog */}
+      <AlertDialog
+        open={showEliminationConfirm}
+        onOpenChange={setShowEliminationConfirm}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Final Elimination</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will eliminate the following player and end the round:
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {playerToEliminate && (
+            <div className="flex items-center justify-center py-4">
+              <div className="flex flex-col items-center space-y-2">
+                <SimpleUserAvatar
+                  userId={playerToEliminate}
+                  name={
+                    game?.participants.find(
+                      (p) => p.playerId === playerToEliminate,
+                    )?.player?.name || 'Unknown Player'
+                  }
+                  imageStorageId={
+                    game?.participants.find(
+                      (p) => p.playerId === playerToEliminate,
+                    )?.player?.imageStorageId
+                  }
+                  initials={
+                    game?.participants.find(
+                      (p) => p.playerId === playerToEliminate,
+                    )?.player?.initials
+                  }
+                  size="2xl"
+                />
+                <div className="text-center">
+                  <p className="text-lg font-semibold">
+                    {game?.participants.find(
+                      (p) => p.playerId === playerToEliminate,
+                    )?.player?.name || 'Unknown Player'}
+                  </p>
+                  <p className="text-muted-foreground text-sm">
+                    Will be eliminated
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          <AlertDialogDescription className="text-center">
+            Are you sure you want to continue?
+          </AlertDialogDescription>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowEliminationConfirm(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmElimination}>
+              Eliminate Player
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
