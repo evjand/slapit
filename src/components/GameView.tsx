@@ -455,6 +455,44 @@ export function GameView({ gameId, onBack }: GameViewProps) {
           </div>
         </div>
 
+        {/* Match Ball Indicator */}
+        {currentRound &&
+          currentRound.currentPlayerOrder &&
+          currentRound.currentPlayerOrder.length === 2 &&
+          (() => {
+            const playersWithMatchBall = currentRound.currentPlayerOrder
+              .map((playerId) => {
+                const player = currentRound.players?.find(
+                  (p) => p._id === playerId,
+                )
+                const participant = game.participants.find(
+                  (p) => p.playerId === playerId,
+                )
+                const isMatchBall =
+                  game.gameMode === 'firstToX' &&
+                  game.winningPoints &&
+                  participant &&
+                  participant.currentPoints >= game.winningPoints - 1
+                return isMatchBall ? player?.name : null
+              })
+              .filter(Boolean)
+
+            return playersWithMatchBall.length > 0 ? (
+              <div className="absolute top-48 left-1/2 z-10 -translate-x-1/2 transform">
+                <div className="bg-background/80 backdrop-blur-sm">
+                  <div className="flex items-center gap-2 text-center text-sm">
+                    <span className="animate-pulse text-lg">🔴</span>
+                    <span className="text-foreground/60 text-primary">
+                      {playersWithMatchBall.length === 1
+                        ? `${playersWithMatchBall[0]} has matchball`
+                        : `${playersWithMatchBall.join(' and ')} have matchball`}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : null
+          })()}
+
         {/* Bottom scores overlay */}
         <div className="absolute right-6 bottom-6 left-6 z-10">
           <div className="bg-background/90 rounded-xl border-2 p-6 backdrop-blur-sm">
@@ -619,6 +657,43 @@ export function GameView({ gameId, onBack }: GameViewProps) {
               </span>
             </p>
           </div>
+
+          {/* Match Ball Indicator */}
+          {currentRound.currentPlayerOrder &&
+            currentRound.currentPlayerOrder.length === 2 &&
+            (() => {
+              const playersWithMatchBall = currentRound.currentPlayerOrder
+                .map((playerId) => {
+                  const player = currentRound.players?.find(
+                    (p) => p._id === playerId,
+                  )
+                  const participant = game.participants.find(
+                    (p) => p.playerId === playerId,
+                  )
+                  const isMatchBall =
+                    game.gameMode === 'firstToX' &&
+                    game.winningPoints &&
+                    participant &&
+                    participant.currentPoints >= game.winningPoints - 1
+                  return isMatchBall ? player?.name : null
+                })
+                .filter(Boolean)
+
+              return playersWithMatchBall.length > 0 ? (
+                <div className="mb-4">
+                  <div className="bg-background/80 backdrop-blur-sm">
+                    <div className="flex items-center justify-center gap-2 text-center text-sm">
+                      <span className="animate-pulse text-lg">🔴</span>
+                      <span className="text-primary">
+                        {playersWithMatchBall.length === 1
+                          ? `${playersWithMatchBall[0]} has matchball`
+                          : `${playersWithMatchBall.join(' and ')} have matchball`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : null
+            })()}
 
           {/* Playing Field */}
           <PlayingField
