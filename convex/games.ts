@@ -351,3 +351,110 @@ export const completeGame = mutation({
     }
   },
 })
+
+export const setTelevised = mutation({
+  args: { gameId: v.id('games') },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) {
+      throw new Error('Must be logged in to set televised status')
+    }
+
+    const game = await ctx.db.get(args.gameId)
+    if (!game) {
+      throw new Error('Game not found')
+    }
+
+    if (game.createdBy !== userId) {
+      throw new Error('Not authorized to modify this game')
+    }
+
+    // First, unset any other televised games
+    const televisedGames = await ctx.db
+      .query('games')
+      .withIndex('by_creator', (q) => q.eq('createdBy', userId))
+      .filter((q) => q.eq(q.field('isTelevised'), true))
+      .collect()
+
+    for (const televisedGame of televisedGames) {
+      await ctx.db.patch(televisedGame._id, { isTelevised: false })
+    }
+
+    // Set this game as televised
+    await ctx.db.patch(args.gameId, { isTelevised: true })
+  },
+})
+
+export const unsetTelevised = mutation({
+  args: { gameId: v.id('games') },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) {
+      throw new Error('Must be logged in to unset televised status')
+    }
+
+    const game = await ctx.db.get(args.gameId)
+    if (!game) {
+      throw new Error('Game not found')
+    }
+
+    if (game.createdBy !== userId) {
+      throw new Error('Not authorized to modify this game')
+    }
+
+    await ctx.db.patch(args.gameId, { isTelevised: false })
+  },
+})
+
+export const getTelevisedGame = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) {
+      return null
+    }
+
+    const televisedGame = await ctx.db
+      .query('games')
+      .withIndex('by_creator', (q) => q.eq('createdBy', userId))
+      .filter((q) => q.eq(q.field('isTelevised'), true))
+      .first()
+
+    if (!televisedGame) {
+      return null
+    }
+
+    // Get the current round for this game
+    const currentRound = await ctx.db
+      .query('rounds')
+      .withIndex('by_game', (q) => q.eq('gameId', televisedGame._id))
+      .filter((q) => q.eq(q.field('status'), 'active'))
+      .first()
+
+    if (!currentRound) {
+      return null
+    }
+
+    // Get participants with player details
+    const participants = await ctx.db
+      .query('gameParticipants')
+      .withIndex('by_game', (q) => q.eq('gameId', televisedGame._id))
+      .collect()
+
+    const playersWithDetails = await Promise.all(
+      participants.map(async (participant) => {
+        const player = await ctx.db.get(participant.playerId)
+        return {
+          ...participant,
+          player,
+        }
+      }),
+    )
+
+    return {
+      ...televisedGame,
+      participants: playersWithDetails,
+      currentRound,
+    }
+  },
+})

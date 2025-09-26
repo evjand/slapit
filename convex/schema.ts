@@ -44,6 +44,9 @@ const applicationTables = {
     trackAnalytics: v.optional(v.boolean()), // Whether to track wins/points globally
     trackLeagueAnalytics: v.optional(v.boolean()), // Whether to track to league table
 
+    // Televised match tracking
+    isTelevised: v.optional(v.boolean()), // Whether this game is currently being televised
+
     // Metadata
     createdBy: v.id('users'),
   })

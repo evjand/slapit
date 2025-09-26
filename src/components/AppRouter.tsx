@@ -11,6 +11,7 @@ import {
   LeagueViewRoute,
   GamesOverviewRoute,
   LeaguesOverviewRoute,
+  TelevisedRoute,
 } from '../routes'
 
 function RouterContent() {
@@ -39,6 +40,7 @@ function RouterContent() {
             path="/league/:leagueId/game/:gameId"
             element={<GameViewRoute />}
           />
+          <Route path="/televised" element={<TelevisedRoute />} />
         </Routes>
       </Authenticated>
 

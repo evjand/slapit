@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import { Button } from './ui/button'
+import { Tv } from 'lucide-react'
 
 export function AppNavigation() {
   const location = useLocation()
@@ -28,6 +29,14 @@ export function AppNavigation() {
       <Link to="/leagues">
         <Button variant={isActive('/leagues') ? 'outline' : 'ghost'} size="sm">
           Leagues
+        </Button>
+      </Link>
+      <Link to="/televised">
+        <Button
+          variant={isActive('/televised') ? 'outline' : 'ghost'}
+          size="sm"
+        >
+          Televised
         </Button>
       </Link>
     </nav>

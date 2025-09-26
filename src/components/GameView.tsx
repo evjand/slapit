@@ -43,6 +43,7 @@ import {
   Play,
   ArrowLeft,
   UserPlus,
+  Tv,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { AddPlayersToGame } from './AddPlayersToGame'
@@ -62,6 +63,8 @@ export function GameView({ gameId, onBack }: GameViewProps) {
   const eliminatePlayer = useMutation(api.rounds.eliminatePlayer)
   const revertLastElimination = useMutation(api.rounds.revertLastElimination)
   const createAndStartGame = useMutation(api.games.createAndStartGame)
+  const setTelevised = useMutation(api.games.setTelevised)
+  const unsetTelevised = useMutation(api.games.unsetTelevised)
 
   const [isFocusMode, setIsFocusMode] = useState(false)
   const [isCreatingNewGame, setIsCreatingNewGame] = useState(false)
@@ -141,6 +144,24 @@ export function GameView({ gameId, onBack }: GameViewProps) {
 
   const handleCloseVideo = () => {
     setCurrentVideo(null)
+  }
+
+  const handleSetTelevised = async () => {
+    try {
+      await setTelevised({ gameId })
+      toast.success('Game set to televised')
+    } catch (error) {
+      toast.error('Failed to set game as televised')
+    }
+  }
+
+  const handleUnsetTelevised = async () => {
+    try {
+      await unsetTelevised({ gameId })
+      toast.success('Game removed from televised')
+    } catch (error) {
+      toast.error('Failed to remove game from televised')
+    }
   }
 
   const handleEliminatePlayer = async (playerId: Id<'players'>) => {
@@ -324,6 +345,27 @@ export function GameView({ gameId, onBack }: GameViewProps) {
                   Revert
                 </Button>
               )}
+            {game?.isTelevised ? (
+              <Button
+                onClick={handleUnsetTelevised}
+                variant="outline"
+                size="lg"
+                className="bg-red-100 text-red-800 hover:bg-red-200"
+              >
+                <Tv className="mr-2 h-5 w-5" />
+                Stop Televising
+              </Button>
+            ) : (
+              <Button
+                onClick={handleSetTelevised}
+                variant="outline"
+                size="lg"
+                className="bg-green-100 text-green-800 hover:bg-green-200"
+              >
+                <Tv className="mr-2 h-5 w-5" />
+                Televise Game
+              </Button>
+            )}
             <Button
               onClick={() => setIsFocusMode(false)}
               variant="outline"
@@ -616,6 +658,27 @@ export function GameView({ gameId, onBack }: GameViewProps) {
           <UserPlus className="mr-1 h-4 w-4" />
           Add Players
         </Button>
+        {game?.isTelevised ? (
+          <Button
+            onClick={handleUnsetTelevised}
+            variant="outline"
+            size="sm"
+            title="Stop televising this game"
+          >
+            <Tv className="mr-1 h-4 w-4" />
+            Stop Televising
+          </Button>
+        ) : (
+          <Button
+            onClick={handleSetTelevised}
+            variant="outline"
+            size="sm"
+            title="Set this game as televised"
+          >
+            <Tv className="mr-1 h-4 w-4" />
+            Televise Game
+          </Button>
+        )}
         <Button
           onClick={() => setIsFocusMode(true)}
           variant="outline"
