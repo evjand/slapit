@@ -3,7 +3,8 @@ import { api } from '../../convex/_generated/api'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Button } from './ui/button'
 import { Link } from 'react-router-dom'
-import { Plus, Play, Trophy } from 'lucide-react'
+import { Plus, Play, Trophy, Calendar, Users } from 'lucide-react'
+import { Badge } from './ui/badge'
 
 export function GamesOverview() {
   const games = useQuery(api.games.list) || []
@@ -31,28 +32,37 @@ export function GamesOverview() {
           Ongoing Games
         </h2>
         {ongoingGames.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-3">
             {ongoingGames.map((game) => (
               <Card key={game._id}>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>Game {game._id.slice(-6)}</span>
-                    <span className="text-sm font-normal text-green-600">
-                      Active
-                    </span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="text-muted-foreground text-sm">
-                      Players: {game.playerIds?.length || 0}
-                    </div>
-                    <div className="text-muted-foreground text-sm">
-                      Created:{' '}
-                      {new Date(game._creationTime).toLocaleDateString()}
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="mb-2 flex items-center gap-3">
+                        <h3 className="text-lg font-semibold">{game.name}</h3>
+                        <Badge
+                          variant="secondary"
+                          className="bg-green-100 text-green-800"
+                        >
+                          Active
+                        </Badge>
+                      </div>
+                      <div className="text-muted-foreground flex items-center gap-4 text-sm">
+                        <div className="flex items-center gap-1">
+                          <Users className="h-4 w-4" />
+                          <span>{game.participants?.length || 0} players</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>
+                            {new Date(game._creationTime).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                     <Link to={`/game/${game._id}`}>
-                      <Button className="w-full" size="sm">
+                      <Button size="sm">
+                        <Play className="mr-2 h-4 w-4" />
                         Continue Game
                       </Button>
                     </Link>
@@ -77,28 +87,38 @@ export function GamesOverview() {
           Completed Games
         </h2>
         {completedGames.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-3">
             {completedGames.map((game) => (
               <Card key={game._id}>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>Game {game._id.slice(-6)}</span>
-                    <span className="text-sm font-normal text-yellow-600">
-                      Completed
-                    </span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="text-muted-foreground text-sm">
-                      Players: {game.playerIds?.length || 0}
-                    </div>
-                    <div className="text-muted-foreground text-sm">
-                      Completed:{' '}
-                      {new Date(game._creationTime).toLocaleDateString()}
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="mb-2 flex items-center gap-3">
+                        <h3 className="text-lg font-semibold">{game.name}</h3>
+                        <Badge
+                          variant="secondary"
+                          className="bg-yellow-100 text-yellow-800"
+                        >
+                          Completed
+                        </Badge>
+                      </div>
+                      <div className="text-muted-foreground flex items-center gap-4 text-sm">
+                        <div className="flex items-center gap-1">
+                          <Users className="h-4 w-4" />
+                          <span>{game.participants?.length || 0} players</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>
+                            Completed{' '}
+                            {new Date(game._creationTime).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                     <Link to={`/game/${game._id}`}>
-                      <Button variant="outline" className="w-full" size="sm">
+                      <Button variant="outline" size="sm">
+                        <Trophy className="mr-2 h-4 w-4" />
                         View Results
                       </Button>
                     </Link>

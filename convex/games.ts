@@ -19,11 +19,28 @@ export const list = query({
       return []
     }
 
-    return await ctx.db
+    const games = await ctx.db
       .query('games')
       .withIndex('by_creator', (q) => q.eq('createdBy', userId))
       .order('desc')
       .collect()
+
+    // Add participant count to each game
+    const gamesWithParticipants = await Promise.all(
+      games.map(async (game) => {
+        const participants = await ctx.db
+          .query('gameParticipants')
+          .withIndex('by_game', (q) => q.eq('gameId', game._id))
+          .collect()
+
+        return {
+          ...game,
+          participants: participants,
+        }
+      }),
+    )
+
+    return gamesWithParticipants
   },
 })
 
