@@ -15,6 +15,11 @@ interface UserAvatarProps {
 
 // Generate a deterministic color palette based on user ID
 function generateColorPalette(userId: string): string[] {
+  // Safety check for undefined or null userId
+  if (!userId) {
+    return ['#6B7280', '#9CA3AF', '#D1D5DB', '#F3F4F6'] // Default gray palette
+  }
+
   // Simple hash function to convert string to number
   let hash = 0
   for (let i = 0; i < userId.length; i++) {
