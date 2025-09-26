@@ -2,30 +2,7 @@ import React from 'react'
 import { SimpleUserAvatar } from './UserAvatar'
 import { Id } from '../../convex/_generated/dataModel'
 import { cn } from '@/lib/utils'
-
-export interface Player {
-  totalWins?: number
-  _id?: Id<'players'>
-  name?: string
-  currentPoints?: number
-  totalPoints?: number
-  imageStorageId?: Id<'_storage'>
-  initials?: string
-}
-
-export interface PlayingFieldProps {
-  players: Player[]
-  serverId?: Id<'players'>
-  onPlayerClick?: (playerId: Id<'players'>) => void
-  showServerIndicator?: boolean
-  showPoints?: boolean
-  pointsLabel?: string
-  className?: string
-  playerCardClassName?: string
-  avatarSize?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
-  layout?: 'horizontal' | 'vertical' | 'grid'
-  disabled?: boolean
-}
+import { Player, PlayingFieldProps } from '../types'
 
 export function PlayingField({
   players,

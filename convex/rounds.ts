@@ -235,33 +235,50 @@ export const eliminatePlayer = mutation({
             setsPerGame: game.setsPerGame,
           }
 
-          const currentState = {
-            maxPoints: newPoints,
-            setsCompleted: game.setsCompleted,
-          }
-
-          if (shouldEndGame(gameConfig.mode, gameConfig, currentState)) {
-            // Complete the game using the unified completion logic
-            await ctx.runMutation(api.games.completeGame, {
-              gameId: args.gameId,
-              winnerId: winnerId,
-            })
-          } else if (game.gameMode === 'fixedSets') {
-            // For fixed sets mode, increment sets completed and start new round
+          if (game.gameMode === 'fixedSets') {
+            // For fixed sets mode, increment sets completed first
             const newSetsCompleted = (game.setsCompleted || 0) + 1
             await ctx.db.patch(args.gameId, {
               setsCompleted: newSetsCompleted,
             })
 
-            // Start a new round for the next set
-            await ctx.runMutation(api.rounds.startNewRound, {
-              gameId: args.gameId,
-            })
+            // Check if game should end after incrementing sets completed
+            const currentState = {
+              maxPoints: newPoints,
+              setsCompleted: newSetsCompleted,
+            }
+
+            if (shouldEndGame(gameConfig.mode, gameConfig, currentState)) {
+              // Complete the game using the unified completion logic
+              await ctx.runMutation(api.games.completeGame, {
+                gameId: args.gameId,
+                winnerId: winnerId,
+              })
+            } else {
+              // Start a new round for the next set
+              await ctx.runMutation(api.rounds.startNewRound, {
+                gameId: args.gameId,
+              })
+            }
           } else {
-            // For firstToX mode, start a new round
-            await ctx.runMutation(api.rounds.startNewRound, {
-              gameId: args.gameId,
-            })
+            // For firstToX mode, check if game should end
+            const currentState = {
+              maxPoints: newPoints,
+              setsCompleted: game.setsCompleted,
+            }
+
+            if (shouldEndGame(gameConfig.mode, gameConfig, currentState)) {
+              // Complete the game using the unified completion logic
+              await ctx.runMutation(api.games.completeGame, {
+                gameId: args.gameId,
+                winnerId: winnerId,
+              })
+            } else {
+              // Start a new round
+              await ctx.runMutation(api.rounds.startNewRound, {
+                gameId: args.gameId,
+              })
+            }
           }
         }
       }

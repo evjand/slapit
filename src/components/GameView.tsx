@@ -3,6 +3,15 @@ import { api } from '../../convex/_generated/api'
 import { toast } from 'sonner'
 import { Id } from '../../convex/_generated/dataModel'
 import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
+import {
+  GameViewProps,
+  Game,
+  GameWithParticipants,
+  GameMode,
+  GAME_MODES,
+  GAME_STATUSES,
+} from '../types'
 import { Button } from './ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { SimpleUserAvatar } from './UserAvatar'
@@ -29,12 +38,13 @@ import { useNavigate } from 'react-router-dom'
 import { AddPlayersToGame } from './AddPlayersToGame'
 import { FullscreenVideoPlayer } from './FullscreenVideoPlayer'
 
-interface GameViewProps {
-  gameId: Id<'games'>
-  onBack?: () => void
-}
+// Using GameViewProps from types/index.ts
 
 export function GameView({ gameId, onBack }: GameViewProps) {
+  const location = useLocation()
+  const isLeagueGame = location.pathname.includes('/league/')
+  const leagueId = isLeagueGame ? location.pathname.split('/')[2] : null
+
   // Game queries and mutations
   const game = useQuery(api.games.get, { gameId })
   const currentRound = useQuery(api.rounds.getCurrentRound, { gameId })
@@ -97,7 +107,7 @@ export function GameView({ gameId, onBack }: GameViewProps) {
       const playerIds = game.participants.map((p) => p.playerId)
       const newGameId = await createAndStartGame({
         name: `${game.name} (Rematch)`,
-        gameMode: game.gameMode || 'firstToX',
+        gameMode: game.gameMode,
         winningPoints: game.winningPoints,
         setsPerGame: game.setsPerGame,
         playerIds,
@@ -197,27 +207,39 @@ export function GameView({ gameId, onBack }: GameViewProps) {
         </div>
 
         <div className="mt-8 flex flex-col items-center space-y-4">
-          <div className="text-center">
-            <p className="text-foreground/70 mb-4 text-sm">
-              Want to play again with the same players?
-            </p>
-            <Button
-              onClick={handleNewGameWithSamePlayers}
-              disabled={isCreatingNewGame}
-              size="lg"
-              className="px-8 py-3"
-            >
-              <Play className="mr-2 h-5 w-5" />
-              {isCreatingNewGame ? 'Creating...' : 'New Game with Same Players'}
-            </Button>
-          </div>
+          {!game.leagueId && (
+            <div className="text-center">
+              <p className="text-foreground/70 mb-4 text-sm">
+                Want to play again with the same players?
+              </p>
+              <Button
+                onClick={handleNewGameWithSamePlayers}
+                disabled={isCreatingNewGame}
+                size="lg"
+                className="px-8 py-3"
+              >
+                <Play className="mr-2 h-5 w-5" />
+                {isCreatingNewGame
+                  ? 'Creating...'
+                  : 'New Game with Same Players'}
+              </Button>
+            </div>
+          )}
           <Button
             variant="outline"
-            onClick={() => navigate('/games')}
+            onClick={() => {
+              if (isLeagueGame && leagueId) {
+                // For league games accessed through league route, go back to league
+                navigate(`/league/${leagueId}`)
+              } else {
+                // For standalone games, go back to games list
+                navigate('/games')
+              }
+            }}
             size="sm"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Games
+            {isLeagueGame ? 'Back to League' : 'Back to Games'}
           </Button>
         </div>
       </div>

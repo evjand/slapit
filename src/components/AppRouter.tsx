@@ -35,6 +35,10 @@ function RouterContent() {
           <Route path="/leagues/create" element={<LeagueSetupRoute />} />
           <Route path="/game/:gameId" element={<GameViewRoute />} />
           <Route path="/league/:leagueId" element={<LeagueViewRoute />} />
+          <Route
+            path="/league/:leagueId/game/:gameId"
+            element={<GameViewRoute />}
+          />
         </Routes>
       </Authenticated>
 

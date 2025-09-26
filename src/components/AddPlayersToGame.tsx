@@ -8,12 +8,7 @@ import { SimpleUserAvatar } from './UserAvatar'
 import { Checkbox } from './ui/checkbox'
 import { toast } from 'sonner'
 import { Plus, X } from 'lucide-react'
-
-interface AddPlayersToGameProps {
-  gameId: Id<'games'>
-  currentPlayerIds: Id<'players'>[]
-  onClose: () => void
-}
+import { AddPlayersToGameProps } from '../types'
 
 export function AddPlayersToGame({
   gameId,

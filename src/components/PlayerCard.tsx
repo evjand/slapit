@@ -7,8 +7,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Player } from './PlayingField'
 import { SimpleUserAvatar } from './UserAvatar'
+import { Player, PlayerCardProps } from '../types'
 import { Button } from './ui/button'
 import { Camera, MoreVertical, Trash2, Upload, X, Edit3 } from 'lucide-react'
 import { useRef, useState } from 'react'

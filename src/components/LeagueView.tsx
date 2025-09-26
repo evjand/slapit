@@ -3,6 +3,7 @@ import { api } from '../../convex/_generated/api'
 import { toast } from 'sonner'
 import { Id } from '../../convex/_generated/dataModel'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { HeatView } from './HeatView'
 import { Button } from './ui/button'
 import { cn } from '@/lib/utils'
@@ -14,19 +15,17 @@ import {
   TableHeader,
   TableRow,
 } from './ui/table'
-
-interface LeagueViewProps {
-  leagueId: Id<'leagues'>
-}
+import { LeagueViewProps } from '../types'
 
 export function LeagueView({ leagueId }: LeagueViewProps) {
+  const navigate = useNavigate()
   const league = useQuery(api.leagues.get, { leagueId })
-  const heats = useQuery(api.leagues.getHeats, { leagueId })
+  const games = useQuery(api.leagues.getHeats, { leagueId })
   const leagueTable = useQuery(api.leagues.getLeagueTable, { leagueId })
   const generateHeats = useMutation(api.leagues.generateHeats)
 
-  const [selectedHeatId, setSelectedHeatId] = useState<Id<'heats'> | null>(null)
-  const [activeTab, setActiveTab] = useState<'heats' | 'table'>('heats')
+  const [selectedGameId, setSelectedGameId] = useState<Id<'games'> | null>(null)
+  const [activeTab, setActiveTab] = useState<'games' | 'table'>('games')
 
   const handleGenerateHeats = async () => {
     try {
@@ -45,19 +44,18 @@ export function LeagueView({ leagueId }: LeagueViewProps) {
     )
   }
 
-  if (selectedHeatId) {
+  if (selectedGameId) {
     return (
       <HeatView
-        heatId={selectedHeatId}
-        onBack={() => setSelectedHeatId(null)}
+        heatId={selectedGameId}
+        onBack={() => setSelectedGameId(null)}
       />
     )
   }
 
-  const allHeatsCompleted =
-    heats?.every((heat) => heat.status === 'completed') ?? false
-  const hasActiveHeats =
-    heats?.some((heat) => heat.status !== 'pending') ?? false
+  const allGamesCompleted =
+    games?.every((game) => game.status === 'completed') ?? false
+  const hasActiveGames = games?.some((game) => game.status !== 'setup') ?? false
 
   return (
     <div className="space-y-6">
@@ -78,13 +76,13 @@ export function LeagueView({ leagueId }: LeagueViewProps) {
 
         {league.status === 'setup' && (
           <Button onClick={handleGenerateHeats}>
-            Generate First Round Heats
+            Generate First Round Games
           </Button>
         )}
 
-        {league.status === 'active' && allHeatsCompleted && (
+        {league.status === 'active' && allGamesCompleted && (
           <Button onClick={handleGenerateHeats}>
-            Generate Next Round Heats
+            Generate Next Round Games
           </Button>
         )}
       </div>
@@ -94,10 +92,10 @@ export function LeagueView({ leagueId }: LeagueViewProps) {
         <div className="border-border border-b">
           <nav className="flex space-x-8 px-6 py-4">
             <Button
-              onClick={() => setActiveTab('heats')}
-              variant={activeTab === 'heats' ? 'default' : 'secondary'}
+              onClick={() => setActiveTab('games')}
+              variant={activeTab === 'games' ? 'default' : 'secondary'}
             >
-              Current Heats
+              Current Games
             </Button>
             <Button
               onClick={() => setActiveTab('table')}
@@ -109,42 +107,44 @@ export function LeagueView({ leagueId }: LeagueViewProps) {
         </div>
 
         <div className="p-6">
-          {activeTab === 'heats' && (
+          {activeTab === 'games' && (
             <div>
-              {heats && heats.length > 0 ? (
+              {games && games.length > 0 ? (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {heats.map((heat) => (
+                  {games.map((game) => (
                     <div
-                      key={heat._id}
+                      key={game._id}
                       className={cn(
                         'cursor-pointer rounded-lg border-2 p-4 transition-all',
-                        heat.status === 'completed'
+                        game.status === 'completed'
                           ? 'bg-card'
-                          : heat.status === 'active'
+                          : game.status === 'active'
                             ? 'bg-card border-green-500 dark:border-green-600'
                             : 'bg-card',
                       )}
-                      onClick={() => setSelectedHeatId(heat._id)}
+                      onClick={() =>
+                        navigate(`/league/${leagueId}/game/${game._id}`)
+                      }
                     >
                       <div className="mb-3 flex items-center justify-between">
                         <h3 className="text-foreground font-semibold">
-                          Heat {heat.heatNumber}
+                          Game {game.heatNumber}
                         </h3>
                         <span
                           className={`rounded-full px-2 py-1 text-xs ${
-                            heat.status === 'completed'
+                            game.status === 'completed'
                               ? 'bg-green-100 text-green-800'
-                              : heat.status === 'active'
+                              : game.status === 'active'
                                 ? 'bg-blue-100 text-blue-800'
                                 : 'bg-gray-100 text-gray-800'
                           }`}
                         >
-                          {heat.status}
+                          {game.status}
                         </span>
                       </div>
 
                       <div className="space-y-2">
-                        {heat.players?.map((player) => (
+                        {game.players?.map((player) => (
                           <div
                             key={player?._id}
                             className="flex items-center justify-between text-sm"
@@ -159,7 +159,7 @@ export function LeagueView({ leagueId }: LeagueViewProps) {
 
                       <div className="mt-3 border-t border-gray-200 pt-3">
                         <p className="text-foreground/70 text-xs">
-                          Sets: {heat.setsCompleted} / {league.setsPerHeat}
+                          Sets: {game.setsCompleted} / {league.setsPerHeat}
                         </p>
                       </div>
                     </div>
@@ -168,8 +168,8 @@ export function LeagueView({ leagueId }: LeagueViewProps) {
               ) : (
                 <div className="text-foreground/50 py-8 text-center">
                   {league.status === 'setup'
-                    ? 'Generate heats to start the league'
-                    : 'No heats available for current round'}
+                    ? 'Generate games to start the league'
+                    : 'No games available for current round'}
                 </div>
               )}
             </div>

@@ -131,9 +131,9 @@ export const generateHeats = mutation({
 
     const newRound = league.currentRound + 1
 
-    // Create games instead of heats
+    // Create and start games instead of heats
     for (let i = 0; i < heats.length; i++) {
-      await ctx.runMutation(api.games.create, {
+      await ctx.runMutation(api.games.createAndStartGame, {
         name: `Heat ${i + 1} - Round ${newRound}`,
         gameMode: 'fixedSets',
         setsPerGame: league.setsPerHeat,

@@ -84,17 +84,20 @@ export const create = mutation({
       throw new Error('Must be logged in to create games')
     }
 
+    // Provide default game mode if not specified
+    const gameMode = args.gameMode || 'firstToX'
+
     // Validate game mode configuration
-    if (args.gameMode === 'firstToX' && !args.winningPoints) {
+    if (gameMode === 'firstToX' && !args.winningPoints) {
       throw new Error('winningPoints is required for firstToX mode')
     }
-    if (args.gameMode === 'fixedSets' && !args.setsPerGame) {
+    if (gameMode === 'fixedSets' && !args.setsPerGame) {
       throw new Error('setsPerGame is required for fixedSets mode')
     }
 
     const gameId = await ctx.db.insert('games', {
       name: args.name,
-      gameMode: args.gameMode,
+      gameMode: gameMode,
       winningPoints: args.winningPoints,
       setsPerGame: args.setsPerGame,
       status: 'setup',
@@ -131,7 +134,9 @@ export const startGame = mutation({
 export const createAndStartGame = mutation({
   args: {
     name: v.string(),
-    gameMode: v.union(v.literal('firstToX'), v.literal('fixedSets')),
+    gameMode: v.optional(
+      v.union(v.literal('firstToX'), v.literal('fixedSets')),
+    ),
     winningPoints: v.optional(v.number()),
     setsPerGame: v.optional(v.number()),
     playerIds: v.array(v.id('players')),
@@ -146,18 +151,21 @@ export const createAndStartGame = mutation({
       throw new Error('Must be logged in to create games')
     }
 
+    // Provide default game mode if not specified
+    const gameMode = args.gameMode || 'firstToX'
+
     // Validate game mode configuration
-    if (args.gameMode === 'firstToX' && !args.winningPoints) {
+    if (gameMode === 'firstToX' && !args.winningPoints) {
       throw new Error('winningPoints is required for firstToX mode')
     }
-    if (args.gameMode === 'fixedSets' && !args.setsPerGame) {
+    if (gameMode === 'fixedSets' && !args.setsPerGame) {
       throw new Error('setsPerGame is required for fixedSets mode')
     }
 
     // Create the game with active status
     const gameId = await ctx.db.insert('games', {
       name: args.name,
-      gameMode: args.gameMode,
+      gameMode: gameMode,
       winningPoints: args.winningPoints,
       setsPerGame: args.setsPerGame,
       status: 'active',
