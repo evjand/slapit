@@ -492,6 +492,13 @@ export function GameView({ gameId, onBack }: GameViewProps) {
               >
                 🎯 Skatolled
               </Button>
+              <Button
+                onClick={() => handleReactionVideo('/pinned.mp4')}
+                variant="outline"
+                size="lg"
+              >
+                📌 Pinned
+              </Button>
               {currentVideo}
             </div>
           </div>
