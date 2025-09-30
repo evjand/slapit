@@ -141,3 +141,36 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer base {
+  .confetti-piece {
+    position: absolute;
+    top: -12vh;
+    opacity: 0;
+    will-change: transform, opacity;
+    transform-origin: left top;
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.05);
+    transform: rotate(var(--confetti-rotate-start, 0deg));
+    animation-name: confetti-fall;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+  }
+}
+
+@layer base {
+  @keyframes confetti-fall {
+    0% {
+      transform: translate3d(0, -10vh, 0)
+        rotate(var(--confetti-rotate-start, 0deg));
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    100% {
+      transform: translate3d(var(--confetti-drift, 0px), 110vh, 0)
+        rotate(var(--confetti-rotate-end, 720deg));
+      opacity: 0;
+    }
+  }
+}
