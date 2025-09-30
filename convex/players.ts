@@ -40,6 +40,7 @@ export const create = mutation({
       totalWins: 0,
       totalPoints: 0,
       totalEliminations: 0,
+      totalGamesPlayed: 0,
       createdBy: userId,
     })
   },
@@ -51,6 +52,7 @@ export const updateStats = mutation({
     wins: v.optional(v.number()),
     points: v.optional(v.number()),
     eliminations: v.optional(v.number()),
+    gamesPlayed: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const player = await ctx.db.get(args.playerId)
@@ -67,6 +69,9 @@ export const updateStats = mutation({
     }
     if (args.eliminations !== undefined) {
       updates.totalEliminations = player.totalEliminations + args.eliminations
+    }
+    if (args.gamesPlayed !== undefined) {
+      updates.totalGamesPlayed = player.totalGamesPlayed + args.gamesPlayed
     }
 
     await ctx.db.patch(args.playerId, updates)

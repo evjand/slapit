@@ -259,6 +259,7 @@ export async function updatePlayerGlobalStats(
   points: number,
   eliminations: number,
   wins: number,
+  gamesPlayed: number,
 ) {
   const player = await ctx.db.get(playerId)
   if (player) {
@@ -266,6 +267,7 @@ export async function updatePlayerGlobalStats(
       totalPoints: player.totalPoints + points,
       totalEliminations: player.totalEliminations + eliminations,
       totalWins: player.totalWins + wins,
+      totalGamesPlayed: player.totalGamesPlayed + gamesPlayed,
     })
   }
 }

@@ -322,6 +322,7 @@ export const completeGame = mutation({
           points,
           playerEliminations,
           wins,
+          gamesPlayed,
         )
       }
 

@@ -24,7 +24,7 @@ export function PlayerPool() {
   const [newPlayerName, setNewPlayerName] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const [sortField, setSortField] = useState<
-    'rank' | 'wins' | 'points' | 'eliminations'
+    'rank' | 'wins' | 'points' | 'eliminations' | 'gamesPlayed' | 'winRate' | 'avgPoints' | 'avgEliminations'
   >('rank')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
 
@@ -44,7 +44,7 @@ export function PlayerPool() {
     }
   }
 
-  const handleSort = (field: 'rank' | 'wins' | 'points' | 'eliminations') => {
+  const handleSort = (field: 'rank' | 'wins' | 'points' | 'eliminations' | 'gamesPlayed' | 'winRate' | 'avgPoints' | 'avgEliminations') => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
     } else {
@@ -64,7 +64,19 @@ export function PlayerPool() {
             p.totalPoints > player.totalPoints),
       ).length + 1
 
-    return { ...player, actualRank: rank }
+    // Calculate performance metrics
+    const gamesPlayed = player.totalGamesPlayed || 0
+    const winRate = gamesPlayed > 0 ? (player.totalWins / gamesPlayed) * 100 : 0
+    const avgPoints = gamesPlayed > 0 ? player.totalPoints / gamesPlayed : 0
+    const avgEliminations = gamesPlayed > 0 ? player.totalEliminations / gamesPlayed : 0
+
+    return { 
+      ...player, 
+      actualRank: rank,
+      winRate,
+      avgPoints,
+      avgEliminations,
+    }
   })
 
   // Sort players based on selected field and direction (for table display only)
@@ -80,6 +92,18 @@ export function PlayerPool() {
         break
       case 'eliminations':
         comparison = a.totalEliminations - b.totalEliminations
+        break
+      case 'gamesPlayed':
+        comparison = (a.totalGamesPlayed || 0) - (b.totalGamesPlayed || 0)
+        break
+      case 'winRate':
+        comparison = a.winRate - b.winRate
+        break
+      case 'avgPoints':
+        comparison = a.avgPoints - b.avgPoints
+        break
+      case 'avgEliminations':
+        comparison = a.avgEliminations - b.avgEliminations
         break
       case 'rank':
       default:
@@ -129,11 +153,39 @@ export function PlayerPool() {
                   <TableHead>Player</TableHead>
                   <TableHead
                     className="hover:bg-muted/50 cursor-pointer text-right"
+                    onClick={() => handleSort('gamesPlayed')}
+                  >
+                    <div className="flex items-center justify-end gap-1">
+                      Games Played
+                      {sortField === 'gamesPlayed' &&
+                        (sortDirection === 'asc' ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        ))}
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="hover:bg-muted/50 cursor-pointer text-right"
                     onClick={() => handleSort('wins')}
                   >
                     <div className="flex items-center justify-end gap-1">
                       Games Won
                       {sortField === 'wins' &&
+                        (sortDirection === 'asc' ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        ))}
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="hover:bg-muted/50 cursor-pointer text-right"
+                    onClick={() => handleSort('winRate')}
+                  >
+                    <div className="flex items-center justify-end gap-1">
+                      Win Rate
+                      {sortField === 'winRate' &&
                         (sortDirection === 'asc' ? (
                           <ChevronUp className="h-4 w-4" />
                         ) : (
@@ -157,11 +209,39 @@ export function PlayerPool() {
                   </TableHead>
                   <TableHead
                     className="hover:bg-muted/50 cursor-pointer text-right"
+                    onClick={() => handleSort('avgPoints')}
+                  >
+                    <div className="flex items-center justify-end gap-1">
+                      Avg Pts/Game
+                      {sortField === 'avgPoints' &&
+                        (sortDirection === 'asc' ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        ))}
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="hover:bg-muted/50 cursor-pointer text-right"
                     onClick={() => handleSort('eliminations')}
                   >
                     <div className="flex items-center justify-end gap-1">
                       Eliminations
                       {sortField === 'eliminations' &&
+                        (sortDirection === 'asc' ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        ))}
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="hover:bg-muted/50 cursor-pointer text-right"
+                    onClick={() => handleSort('avgEliminations')}
+                  >
+                    <div className="flex items-center justify-end gap-1">
+                      Avg Elim/Game
+                      {sortField === 'avgEliminations' &&
                         (sortDirection === 'asc' ? (
                           <ChevronUp className="h-4 w-4" />
                         ) : (
@@ -189,14 +269,32 @@ export function PlayerPool() {
                         <span className="font-medium">{player.name}</span>
                       </div>
                     </TableCell>
+                    <TableCell className="text-right font-semibold">
+                      {player.totalGamesPlayed || 0}
+                    </TableCell>
                     <TableCell className="text-right font-semibold text-green-600">
                       {player.totalWins}
+                    </TableCell>
+                    <TableCell className="text-right font-semibold text-green-500">
+                      {(player.totalGamesPlayed || 0) > 0 
+                        ? `${player.winRate.toFixed(1)}%` 
+                        : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right font-semibold text-blue-600">
                       {player.totalPoints}
                     </TableCell>
+                    <TableCell className="text-right font-semibold text-blue-500">
+                      {(player.totalGamesPlayed || 0) > 0 
+                        ? player.avgPoints.toFixed(1) 
+                        : 'N/A'}
+                    </TableCell>
                     <TableCell className="text-right font-semibold text-orange-600">
                       {player.totalEliminations}
+                    </TableCell>
+                    <TableCell className="text-right font-semibold text-orange-500">
+                      {(player.totalGamesPlayed || 0) > 0 
+                        ? player.avgEliminations.toFixed(1) 
+                        : 'N/A'}
                     </TableCell>
                   </TableRow>
                 ))}

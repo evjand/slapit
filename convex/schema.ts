@@ -8,6 +8,7 @@ const applicationTables = {
     totalWins: v.number(),
     totalPoints: v.number(),
     totalEliminations: v.number(),
+    totalGamesPlayed: v.number(),
     createdBy: v.id('users'),
     imageStorageId: v.optional(v.id('_storage')),
     initials: v.optional(v.string()),
