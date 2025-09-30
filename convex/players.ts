@@ -62,16 +62,16 @@ export const updateStats = mutation({
 
     const updates: any = {}
     if (args.wins !== undefined) {
-      updates.totalWins = player.totalWins + args.wins
+      updates.totalWins = (player.totalWins ?? 0) + args.wins
     }
     if (args.points !== undefined) {
-      updates.totalPoints = player.totalPoints + args.points
+      updates.totalPoints = (player.totalPoints ?? 0) + args.points
     }
     if (args.eliminations !== undefined) {
-      updates.totalEliminations = player.totalEliminations + args.eliminations
+      updates.totalEliminations = (player.totalEliminations ?? 0) + args.eliminations
     }
     if (args.gamesPlayed !== undefined) {
-      updates.totalGamesPlayed = player.totalGamesPlayed + args.gamesPlayed
+      updates.totalGamesPlayed = (player.totalGamesPlayed ?? 0) + args.gamesPlayed
     }
 
     await ctx.db.patch(args.playerId, updates)

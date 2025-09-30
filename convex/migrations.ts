@@ -1,19 +1,12 @@
-import {mutation} from './_generated/server'
-import {getAuthUserId} from '@convex-dev/auth/server'
+import {internalMutation} from './_generated/server'
 
 // Migration to backfill totalGamesPlayed for existing players
-export const backfillGamesPlayed = mutation({
+export const backfillGamesPlayed = internalMutation({
     args: {},
     handler: async (ctx) => {
-        const userId = await getAuthUserId(ctx)
-        if (!userId) {
-            throw new Error('Must be logged in to run migration')
-        }
-
-        // Get all players for this user
+        // Get all players across all users
         const players = await ctx.db
             .query('players')
-            .withIndex('by_creator', (q) => q.eq('createdBy', userId))
             .collect()
 
         let updatedCount = 0

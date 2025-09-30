@@ -264,10 +264,10 @@ export async function updatePlayerGlobalStats(
   const player = await ctx.db.get(playerId)
   if (player) {
     await ctx.db.patch(playerId, {
-      totalPoints: player.totalPoints + points,
-      totalEliminations: player.totalEliminations + eliminations,
-      totalWins: player.totalWins + wins,
-      totalGamesPlayed: player.totalGamesPlayed + gamesPlayed,
+      totalPoints: (player.totalPoints ?? 0) + points,
+      totalEliminations: (player.totalEliminations ?? 0) + eliminations,
+      totalWins: (player.totalWins ?? 0) + wins,
+      totalGamesPlayed: (player.totalGamesPlayed ?? 0) + gamesPlayed,
     })
   }
 }
