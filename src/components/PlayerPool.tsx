@@ -19,12 +19,13 @@ import { ChevronUp, ChevronDown } from 'lucide-react'
 
 export function PlayerPool() {
   const players = useQuery(api.players.list) || []
+  const eloLeaderboard = useQuery(api.elo.getEloLeaderboard) || []
   const createPlayer = useMutation(api.players.create)
 
   const [newPlayerName, setNewPlayerName] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const [sortField, setSortField] = useState<
-    'rank' | 'wins' | 'points' | 'eliminations' | 'gamesPlayed' | 'winRate' | 'avgPoints' | 'avgEliminations'
+    'rank' | 'wins' | 'points' | 'eliminations' | 'gamesPlayed' | 'winRate' | 'avgPoints' | 'avgEliminations' | 'elo'
   >('rank')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
 
@@ -44,7 +45,7 @@ export function PlayerPool() {
     }
   }
 
-  const handleSort = (field: 'rank' | 'wins' | 'points' | 'eliminations' | 'gamesPlayed' | 'winRate' | 'avgPoints' | 'avgEliminations') => {
+  const handleSort = (field: 'rank' | 'wins' | 'points' | 'eliminations' | 'gamesPlayed' | 'winRate' | 'avgPoints' | 'avgEliminations' | 'elo') => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
     } else {
@@ -52,6 +53,9 @@ export function PlayerPool() {
       setSortDirection('desc')
     }
   }
+
+  // Create ELO map for quick lookup
+  const eloMap = new Map(eloLeaderboard.map(elo => [elo.playerId, elo.currentRating]))
 
   // Calculate actual rankings based on wins first, then points
   const playersWithRank = [...players].map((player, index) => {
@@ -69,6 +73,7 @@ export function PlayerPool() {
     const winRate = gamesPlayed > 0 ? (player.totalWins / gamesPlayed) * 100 : 0
     const avgPoints = gamesPlayed > 0 ? player.totalPoints / gamesPlayed : 0
     const avgEliminations = gamesPlayed > 0 ? player.totalEliminations / gamesPlayed : 0
+    const eloRating = eloMap.get(player._id!) || null
 
     return { 
       ...player, 
@@ -76,6 +81,7 @@ export function PlayerPool() {
       winRate,
       avgPoints,
       avgEliminations,
+      eloRating,
     }
   })
 
@@ -104,6 +110,9 @@ export function PlayerPool() {
         break
       case 'avgEliminations':
         comparison = a.avgEliminations - b.avgEliminations
+        break
+      case 'elo':
+        comparison = (a.eloRating || 0) - (b.eloRating || 0)
         break
       case 'rank':
       default:
@@ -249,6 +258,20 @@ export function PlayerPool() {
                         ))}
                     </div>
                   </TableHead>
+                  <TableHead
+                    className="hover:bg-muted/50 cursor-pointer text-right"
+                    onClick={() => handleSort('elo')}
+                  >
+                    <div className="flex items-center justify-end gap-1">
+                      ELO Rating
+                      {sortField === 'elo' &&
+                        (sortDirection === 'asc' ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        ))}
+                    </div>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -295,6 +318,9 @@ export function PlayerPool() {
                       {(player.totalGamesPlayed || 0) > 0 
                         ? player.avgEliminations.toFixed(1) 
                         : 'N/A'}
+                    </TableCell>
+                    <TableCell className="text-right font-semibold text-purple-600">
+                      {player.eloRating || 'Unrated'}
                     </TableCell>
                   </TableRow>
                 ))}
