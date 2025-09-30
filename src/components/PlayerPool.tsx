@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from 'convex/react'
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { api } from '../../convex/_generated/api'
 import { PlayerCard } from './PlayerCard'
@@ -25,7 +26,15 @@ export function PlayerPool() {
   const [newPlayerName, setNewPlayerName] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const [sortField, setSortField] = useState<
-    'rank' | 'wins' | 'points' | 'eliminations' | 'gamesPlayed' | 'winRate' | 'avgPoints' | 'avgEliminations' | 'elo'
+    | 'rank'
+    | 'wins'
+    | 'points'
+    | 'eliminations'
+    | 'gamesPlayed'
+    | 'winRate'
+    | 'avgPoints'
+    | 'avgEliminations'
+    | 'elo'
   >('rank')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
 
@@ -45,7 +54,18 @@ export function PlayerPool() {
     }
   }
 
-  const handleSort = (field: 'rank' | 'wins' | 'points' | 'eliminations' | 'gamesPlayed' | 'winRate' | 'avgPoints' | 'avgEliminations' | 'elo') => {
+  const handleSort = (
+    field:
+      | 'rank'
+      | 'wins'
+      | 'points'
+      | 'eliminations'
+      | 'gamesPlayed'
+      | 'winRate'
+      | 'avgPoints'
+      | 'avgEliminations'
+      | 'elo',
+  ) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
     } else {
@@ -55,7 +75,9 @@ export function PlayerPool() {
   }
 
   // Create ELO map for quick lookup
-  const eloMap = new Map(eloLeaderboard.map(elo => [elo.playerId, elo.currentRating]))
+  const eloMap = new Map(
+    eloLeaderboard.map((elo) => [elo.playerId, elo.currentRating]),
+  )
 
   // Calculate actual rankings based on wins first, then points
   const playersWithRank = [...players].map((player, index) => {
@@ -72,11 +94,12 @@ export function PlayerPool() {
     const gamesPlayed = player.totalGamesPlayed || 0
     const winRate = gamesPlayed > 0 ? (player.totalWins / gamesPlayed) * 100 : 0
     const avgPoints = gamesPlayed > 0 ? player.totalPoints / gamesPlayed : 0
-    const avgEliminations = gamesPlayed > 0 ? player.totalEliminations / gamesPlayed : 0
+    const avgEliminations =
+      gamesPlayed > 0 ? player.totalEliminations / gamesPlayed : 0
     const eloRating = eloMap.get(player._id!) || null
 
-    return { 
-      ...player, 
+    return {
+      ...player,
       actualRank: rank,
       winRate,
       avgPoints,
@@ -289,7 +312,12 @@ export function PlayerPool() {
                           initials={player.initials}
                           name={player.name}
                         />
-                        <span className="font-medium">{player.name}</span>
+                        <Link
+                          to={`/player/${player._id}`}
+                          className="text-primary font-medium hover:underline"
+                        >
+                          {player.name}
+                        </Link>
                       </div>
                     </TableCell>
                     <TableCell className="text-right font-semibold">
@@ -299,24 +327,24 @@ export function PlayerPool() {
                       {player.totalWins}
                     </TableCell>
                     <TableCell className="text-right font-semibold text-green-500">
-                      {(player.totalGamesPlayed || 0) > 0 
-                        ? `${player.winRate.toFixed(1)}%` 
+                      {(player.totalGamesPlayed || 0) > 0
+                        ? `${player.winRate.toFixed(1)}%`
                         : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right font-semibold text-blue-600">
                       {player.totalPoints}
                     </TableCell>
                     <TableCell className="text-right font-semibold text-blue-500">
-                      {(player.totalGamesPlayed || 0) > 0 
-                        ? player.avgPoints.toFixed(1) 
+                      {(player.totalGamesPlayed || 0) > 0
+                        ? player.avgPoints.toFixed(1)
                         : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right font-semibold text-orange-600">
                       {player.totalEliminations}
                     </TableCell>
                     <TableCell className="text-right font-semibold text-orange-500">
-                      {(player.totalGamesPlayed || 0) > 0 
-                        ? player.avgEliminations.toFixed(1) 
+                      {(player.totalGamesPlayed || 0) > 0
+                        ? player.avgEliminations.toFixed(1)
                         : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right font-semibold text-purple-600">

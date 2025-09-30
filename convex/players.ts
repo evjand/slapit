@@ -18,6 +18,21 @@ export const list = query({
   },
 })
 
+export const get = query({
+  args: { playerId: v.id('players') },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) return null
+
+    const player = await ctx.db.get(args.playerId)
+    if (!player || player.createdBy !== userId) {
+      return null
+    }
+
+    return player
+  },
+})
+
 export const getImageUrl = query({
   args: { storageId: v.id('_storage') },
   handler: async (ctx, args) => {
@@ -68,10 +83,12 @@ export const updateStats = mutation({
       updates.totalPoints = (player.totalPoints ?? 0) + args.points
     }
     if (args.eliminations !== undefined) {
-      updates.totalEliminations = (player.totalEliminations ?? 0) + args.eliminations
+      updates.totalEliminations =
+        (player.totalEliminations ?? 0) + args.eliminations
     }
     if (args.gamesPlayed !== undefined) {
-      updates.totalGamesPlayed = (player.totalGamesPlayed ?? 0) + args.gamesPlayed
+      updates.totalGamesPlayed =
+        (player.totalGamesPlayed ?? 0) + args.gamesPlayed
     }
 
     await ctx.db.patch(args.playerId, updates)
