@@ -10,10 +10,7 @@ import {
   shouldEndGame,
   GameMode,
 } from './gameEngine'
-import {
-  calculateMultiplayerEloChanges,
-  updatePlayerEloRatings,
-} from './elo'
+import { calculateMultiplayerEloChanges, updatePlayerEloRatings } from './elo'
 
 export const list = query({
   args: {},
@@ -302,7 +299,7 @@ export const completeGame = mutation({
       .collect()
 
     // Calculate ELO changes for all participants
-    const participantIds = participants.map(p => p.playerId)
+    const participantIds = participants.map((p) => p.playerId)
     const eloChanges = await calculateMultiplayerEloChanges(
       ctx,
       args.gameId,
@@ -479,5 +476,43 @@ export const getTelevisedGame = query({
       participants: playersWithDetails,
       currentRound,
     }
+  },
+})
+
+export const cancelGame = mutation({
+  args: {
+    gameId: v.id('games'),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) {
+      throw new Error('Must be logged in')
+    }
+
+    const game = await ctx.db.get(args.gameId)
+    if (!game) {
+      throw new Error('Game not found')
+    }
+
+    if (game.createdBy !== userId) {
+      throw new Error('Not authorized to cancel this game')
+    }
+
+    if (game.status === 'completed') {
+      throw new Error('Cannot cancel a completed game')
+    }
+
+    if (game.status === 'cancelled') {
+      throw new Error('Game is already cancelled')
+    }
+
+    // Simply update the game status to cancelled
+    // No analytics, ELO, or stats updates
+    await ctx.db.patch(args.gameId, {
+      status: 'cancelled',
+    })
+
+    return null
   },
 })

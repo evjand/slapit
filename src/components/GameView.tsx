@@ -44,6 +44,7 @@ import {
   ArrowLeft,
   UserPlus,
   Tv,
+  XCircle,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { AddPlayersToGame } from './AddPlayersToGame'
@@ -66,6 +67,7 @@ export function GameView({ gameId, onBack }: GameViewProps) {
   const createAndStartGame = useMutation(api.games.createAndStartGame)
   const setTelevised = useMutation(api.games.setTelevised)
   const unsetTelevised = useMutation(api.games.unsetTelevised)
+  const cancelGame = useMutation(api.games.cancelGame)
 
   const [isFocusMode, setIsFocusMode] = useState(false)
   const [isCreatingNewGame, setIsCreatingNewGame] = useState(false)
@@ -74,6 +76,7 @@ export function GameView({ gameId, onBack }: GameViewProps) {
   const [showEliminationConfirm, setShowEliminationConfirm] = useState(false)
   const [playerToEliminate, setPlayerToEliminate] =
     useState<Id<'players'> | null>(null)
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   const navigate = useNavigate()
 
   // Auto-start next round when current round is completed
@@ -217,10 +220,53 @@ export function GameView({ gameId, onBack }: GameViewProps) {
     }
   }
 
+  const handleCancelGame = async () => {
+    try {
+      await cancelGame({ gameId })
+      toast.success('Game cancelled')
+
+      // Navigate back appropriately
+      if (isLeagueGame && leagueId) {
+        navigate(`/league/${leagueId}`)
+      } else {
+        navigate('/games')
+      }
+    } catch (error) {
+      toast.error('Failed to cancel game')
+    }
+  }
+
   if (!game) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-500"></div>
+      </div>
+    )
+  }
+
+  if (game.status === 'cancelled') {
+    return (
+      <div className="rounded-lg border p-8 text-center shadow-sm">
+        <h1 className="mb-4 text-4xl font-bold text-orange-600">
+          ⚠️ Game Cancelled
+        </h1>
+        <p className="text-foreground/70 mb-6 text-lg">
+          This game was cancelled and no stats were recorded.
+        </p>
+        <Button
+          variant="outline"
+          onClick={() => {
+            if (isLeagueGame && leagueId) {
+              navigate(`/league/${leagueId}`)
+            } else {
+              navigate('/games')
+            }
+          }}
+          size="sm"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          {isLeagueGame ? 'Back to League' : 'Back to Games'}
+        </Button>
       </div>
     )
   }
@@ -370,6 +416,16 @@ export function GameView({ gameId, onBack }: GameViewProps) {
                 Televise Game
               </Button>
             )}
+            <Button
+              onClick={() => setShowCancelConfirm(true)}
+              variant="outline"
+              size="lg"
+              className="bg-orange-100 text-orange-800 hover:bg-orange-200"
+              title="Cancel game without recording stats"
+            >
+              <XCircle className="mr-2 h-5 w-5" />
+              Cancel Game
+            </Button>
             <Button
               onClick={() => setIsFocusMode(false)}
               variant="outline"
@@ -535,7 +591,7 @@ export function GameView({ gameId, onBack }: GameViewProps) {
                 <div className="bg-background/80 backdrop-blur-sm">
                   <div className="flex items-center gap-2 text-center text-sm">
                     <span className="animate-pulse text-lg">🔴</span>
-                    <span className="text-foreground/60 text-primary">
+                    <span className="text-primary">
                       {playersWithMatchBall.length === 1
                         ? `${playersWithMatchBall[0]} has matchball`
                         : `${playersWithMatchBall.join(' and ')} have matchball`}
@@ -648,6 +704,41 @@ export function GameView({ gameId, onBack }: GameViewProps) {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Cancel Game Confirmation Dialog */}
+        <AlertDialog
+          open={showCancelConfirm}
+          onOpenChange={setShowCancelConfirm}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Cancel Game</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to cancel this game?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="py-4">
+              <div className="rounded-lg bg-orange-50 p-4 dark:bg-orange-950">
+                <p className="text-sm text-orange-800 dark:text-orange-200">
+                  ⚠️ This action will cancel the game without recording any
+                  stats, points, or ELO changes for any players. This cannot be
+                  undone.
+                </p>
+              </div>
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setShowCancelConfirm(false)}>
+                Keep Playing
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleCancelGame}
+                className="bg-orange-600 hover:bg-orange-700"
+              >
+                Cancel Game
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     )
   }
@@ -690,6 +781,16 @@ export function GameView({ gameId, onBack }: GameViewProps) {
             Televise Game
           </Button>
         )}
+        <Button
+          onClick={() => setShowCancelConfirm(true)}
+          variant="outline"
+          size="sm"
+          className="bg-orange-100 text-orange-800 hover:bg-orange-200"
+          title="Cancel game without recording stats"
+        >
+          <XCircle className="mr-1 h-4 w-4" />
+          Cancel Game
+        </Button>
         <Button
           onClick={() => setIsFocusMode(true)}
           variant="outline"
@@ -936,6 +1037,37 @@ export function GameView({ gameId, onBack }: GameViewProps) {
             </AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmElimination}>
               Eliminate Player
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Cancel Game Confirmation Dialog */}
+      <AlertDialog open={showCancelConfirm} onOpenChange={setShowCancelConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Game</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel this game?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <div className="rounded-lg bg-orange-50 p-4 dark:bg-orange-950">
+              <p className="text-sm text-orange-800 dark:text-orange-200">
+                ⚠️ This action will cancel the game without recording any stats,
+                points, or ELO changes for any players. This cannot be undone.
+              </p>
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowCancelConfirm(false)}>
+              Keep Playing
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCancelGame}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              Cancel Game
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

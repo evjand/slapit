@@ -32,6 +32,7 @@ const applicationTables = {
       v.literal('setup'),
       v.literal('active'),
       v.literal('completed'),
+      v.literal('cancelled'),
     ),
     winner: v.optional(v.id('players')),
     setsCompleted: v.optional(v.number()), // Track completed sets

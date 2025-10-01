@@ -9,9 +9,10 @@ import { GameStatusIndicator } from './GameStatusIndicator'
 export function GamesOverview() {
   const games = useQuery(api.games.list) || []
 
-  // Separate ongoing and completed games
+  // Separate ongoing, completed, and cancelled games
   const ongoingGames = games.filter((game) => game.status === 'active')
   const completedGames = games.filter((game) => game.status === 'completed')
+  const cancelledGames = games.filter((game) => game.status === 'cancelled')
 
   return (
     <div className="space-y-6">
@@ -125,6 +126,49 @@ export function GamesOverview() {
           </Card>
         )}
       </div>
+
+      {/* Cancelled Games Section */}
+      {cancelledGames.length > 0 && (
+        <div>
+          <h2 className="mb-4 flex items-center text-2xl font-semibold text-orange-600">
+            ⚠️ Cancelled Games
+          </h2>
+          <div className="space-y-3">
+            {cancelledGames.map((game) => (
+              <Card key={game._id} className="opacity-75">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="mb-2 flex items-center gap-3">
+                        <h3 className="text-lg font-semibold">{game.name}</h3>
+                        <GameStatusIndicator status={game.status} />
+                      </div>
+                      <div className="text-muted-foreground flex items-center gap-4 text-sm">
+                        <div className="flex items-center gap-1">
+                          <Users className="h-4 w-4" />
+                          <span>{game.participants?.length || 0} players</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>
+                            Cancelled{' '}
+                            {new Date(game._creationTime).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <Link to={`/game/${game._id}`}>
+                      <Button variant="outline" size="sm">
+                        View Details
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

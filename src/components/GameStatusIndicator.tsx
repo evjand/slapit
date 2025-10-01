@@ -2,7 +2,7 @@ import { Badge } from './ui/badge'
 import { cn } from '@/lib/utils'
 
 interface GameStatusIndicatorProps {
-  status: 'setup' | 'active' | 'completed' | 'pending'
+  status: 'setup' | 'active' | 'completed' | 'pending' | 'cancelled'
   className?: string
   size?: 'sm' | 'md' | 'lg'
 }
@@ -13,7 +13,7 @@ export function GameStatusIndicator({
   size = 'md',
 }: GameStatusIndicatorProps) {
   const getStatusConfig = (
-    status: 'setup' | 'active' | 'completed' | 'pending',
+    status: 'setup' | 'active' | 'completed' | 'pending' | 'cancelled',
   ) => {
     switch (status) {
       case 'setup':
@@ -43,6 +43,13 @@ export function GameStatusIndicator({
           variant: 'secondary' as const,
           className:
             'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+        }
+      case 'cancelled':
+        return {
+          label: 'Cancelled',
+          variant: 'secondary' as const,
+          className:
+            'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
         }
       default:
         return {

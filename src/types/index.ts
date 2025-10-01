@@ -25,7 +25,7 @@ export interface Game {
   gameMode?: 'firstToX' | 'fixedSets'
   winningPoints?: number
   setsPerGame?: number
-  status: 'setup' | 'active' | 'completed'
+  status: 'setup' | 'active' | 'completed' | 'cancelled'
   winner?: Id<'players'>
   setsCompleted?: number
   leagueId?: Id<'leagues'>
@@ -336,6 +336,7 @@ export const GAME_STATUSES = {
   SETUP: 'setup' as const,
   ACTIVE: 'active' as const,
   COMPLETED: 'completed' as const,
+  CANCELLED: 'cancelled' as const,
 } as const
 
 export const LEAGUE_STATUSES = {
