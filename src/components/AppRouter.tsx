@@ -56,10 +56,11 @@ function RouterContent() {
             </h2>
           </div>
           <SignInForm />
-          {process.env.NODE_ENV}
-          {process.env.VITE_VERCEL_ENV ?? 'no vercel env'}
-          {(process.env.NODE_ENV === 'development' ||
-            process.env.VITE_VERCEL_ENV === 'preview') && <SignUpForm />}
+          {import.meta.env.NODE_ENV}
+          {import.meta.env.VITE_VERCEL_ENV ?? 'no vercel env'}
+          {import.meta.env.__APP_ENV__ ?? 'no app env'}
+          {(import.meta.env.NODE_ENV === 'development' ||
+            import.meta.env.VITE_VERCEL_ENV === 'preview') && <SignUpForm />}
         </div>
       </Unauthenticated>
     </>
