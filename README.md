@@ -27,3 +27,7 @@ Check out the [Convex docs](https://docs.convex.dev/) for more information on ho
 ## HTTP API
 
 User-defined http routes are defined in the `convex/router.ts` file. We split these routes into a separate file from `convex/http.ts` to allow us to prevent the LLM from modifying the authentication routes.
+
+## License
+
+This project is distributed under the [Slapit Non-Commercial License (SNCL) v1.0](./LICENSE.md). Commercial use, redistribution, and hosting are prohibited without explicit written permission from the project owner.
