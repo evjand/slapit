@@ -56,6 +56,8 @@ function RouterContent() {
             </h2>
           </div>
           <SignInForm />
+          {process.env.NODE_ENV}
+          {process.env.VERCEL_ENV}
           {(process.env.NODE_ENV === 'development' ||
             process.env.VERCEL_ENV === 'preview') && <SignUpForm />}
         </div>
