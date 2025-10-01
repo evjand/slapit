@@ -5,6 +5,7 @@ import { SignInForm } from '../SignInForm'
 import {
   HomeRoute,
   PlayerPoolRoute,
+  PlayerDetailRoute,
   GameSetupRoute,
   LeagueSetupRoute,
   GameViewRoute,
@@ -31,6 +32,7 @@ function RouterContent() {
         <Routes>
           <Route path="/" element={<HomeRoute />} />
           <Route path="/players" element={<PlayerPoolRoute />} />
+          <Route path="/player/:playerId" element={<PlayerDetailRoute />} />
           <Route path="/games" element={<GamesOverviewRoute />} />
           <Route path="/leagues" element={<LeaguesOverviewRoute />} />
           <Route path="/leagues/create" element={<LeagueSetupRoute />} />
