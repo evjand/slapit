@@ -57,10 +57,9 @@ function RouterContent() {
           </div>
           <SignInForm />
           {process.env.NODE_ENV}
-          {process.env.VERCEL_ENV ?? 'no vercel env'}
-          {process.env.VERCEL_TARGET_ENV ?? 'no vercel env'}
+          {process.env.VITE_VERCEL_ENV ?? 'no vercel env'}
           {(process.env.NODE_ENV === 'development' ||
-            process.env.VERCEL_TARGET_ENV === 'preview') && <SignUpForm />}
+            process.env.VITE_VERCEL_ENV === 'preview') && <SignUpForm />}
         </div>
       </Unauthenticated>
     </>
