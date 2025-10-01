@@ -14,6 +14,7 @@ import {
   LeaguesOverviewRoute,
   TelevisedRoute,
 } from '../routes'
+import { SignUpForm } from '@/SignUpForm'
 
 function RouterContent() {
   const loggedInUser = useQuery(api.auth.loggedInUser)
@@ -55,6 +56,8 @@ function RouterContent() {
             </h2>
           </div>
           <SignInForm />
+          {(process.env.NODE_ENV === 'development' ||
+            process.env.VERCEL_ENV === 'preview') && <SignUpForm />}
         </div>
       </Unauthenticated>
     </>
