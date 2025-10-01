@@ -18,6 +18,21 @@ export const list = query({
   },
 })
 
+export const get = query({
+  args: { playerId: v.id('players') },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) return null
+
+    const player = await ctx.db.get(args.playerId)
+    if (!player || player.createdBy !== userId) {
+      return null
+    }
+
+    return player
+  },
+})
+
 export const getImageUrl = query({
   args: { storageId: v.id('_storage') },
   handler: async (ctx, args) => {
@@ -40,6 +55,7 @@ export const create = mutation({
       totalWins: 0,
       totalPoints: 0,
       totalEliminations: 0,
+      totalGamesPlayed: 0,
       createdBy: userId,
     })
   },
@@ -51,6 +67,7 @@ export const updateStats = mutation({
     wins: v.optional(v.number()),
     points: v.optional(v.number()),
     eliminations: v.optional(v.number()),
+    gamesPlayed: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const player = await ctx.db.get(args.playerId)
@@ -60,13 +77,18 @@ export const updateStats = mutation({
 
     const updates: any = {}
     if (args.wins !== undefined) {
-      updates.totalWins = player.totalWins + args.wins
+      updates.totalWins = (player.totalWins ?? 0) + args.wins
     }
     if (args.points !== undefined) {
-      updates.totalPoints = player.totalPoints + args.points
+      updates.totalPoints = (player.totalPoints ?? 0) + args.points
     }
     if (args.eliminations !== undefined) {
-      updates.totalEliminations = player.totalEliminations + args.eliminations
+      updates.totalEliminations =
+        (player.totalEliminations ?? 0) + args.eliminations
+    }
+    if (args.gamesPlayed !== undefined) {
+      updates.totalGamesPlayed =
+        (player.totalGamesPlayed ?? 0) + args.gamesPlayed
     }
 
     await ctx.db.patch(args.playerId, updates)

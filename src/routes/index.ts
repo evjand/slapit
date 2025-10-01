@@ -1,5 +1,6 @@
 export { HomeRoute } from './HomeRoute'
 export { PlayerPoolRoute } from './PlayerPoolRoute'
+export { PlayerDetailRoute } from './PlayerDetailRoute'
 export { GameSetupRoute } from './GameSetupRoute'
 export { LeagueSetupRoute } from './LeagueSetupRoute'
 export { GameViewRoute } from './GameViewRoute'

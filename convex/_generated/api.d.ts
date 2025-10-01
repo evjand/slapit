@@ -14,10 +14,12 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as auth from "../auth.js";
+import type * as elo from "../elo.js";
 import type * as gameEngine from "../gameEngine.js";
 import type * as games from "../games.js";
 import type * as http from "../http.js";
 import type * as leagues from "../leagues.js";
+import type * as migrations from "../migrations.js";
 import type * as players from "../players.js";
 import type * as rounds from "../rounds.js";
 import type * as router from "../router.js";
@@ -32,10 +34,12 @@ import type * as router from "../router.js";
  */
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  elo: typeof elo;
   gameEngine: typeof gameEngine;
   games: typeof games;
   http: typeof http;
   leagues: typeof leagues;
+  migrations: typeof migrations;
   players: typeof players;
   rounds: typeof rounds;
   router: typeof router;

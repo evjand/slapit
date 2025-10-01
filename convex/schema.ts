@@ -8,6 +8,7 @@ const applicationTables = {
     totalWins: v.number(),
     totalPoints: v.number(),
     totalEliminations: v.number(),
+    totalGamesPlayed: v.number(),
     createdBy: v.id('users'),
     imageStorageId: v.optional(v.id('_storage')),
     initials: v.optional(v.string()),
@@ -130,6 +131,28 @@ const applicationTables = {
     .index('by_league', ['leagueId'])
     .index('by_league_player', ['leagueId', 'playerId'])
     .index('by_game', ['gameId']),
+
+  // ELO rating system
+  playerEloRatings: defineTable({
+    playerId: v.id('players'),
+    currentRating: v.number(),
+    gamesPlayed: v.number(),
+    peakRating: v.number(),
+    lastUpdated: v.number(), // timestamp
+    createdBy: v.id('users'),
+  }).index('by_player', ['playerId'])
+    .index('by_creator', ['createdBy']),
+
+  eloHistory: defineTable({
+    gameId: v.id('games'),
+    playerId: v.id('players'),
+    ratingBefore: v.number(),
+    ratingAfter: v.number(),
+    ratingChange: v.number(),
+    createdBy: v.id('users'),
+  }).index('by_game', ['gameId'])
+    .index('by_player', ['playerId'])
+    .index('by_creator', ['createdBy']),
 }
 
 export default defineSchema({

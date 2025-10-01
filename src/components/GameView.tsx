@@ -48,6 +48,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { AddPlayersToGame } from './AddPlayersToGame'
 import { FullscreenVideoPlayer } from './FullscreenVideoPlayer'
+import { ConfettiCelebration } from './ConfettiCelebration'
 
 // Using GameViewProps from types/index.ts
 
@@ -227,80 +228,83 @@ export function GameView({ gameId, onBack }: GameViewProps) {
   if (game.status === 'completed') {
     const winner = game.participants.find((p) => p.playerId === game.winner)
     return (
-      <div className="rounded-lg border p-8 text-center shadow-sm">
-        <h1 className="mb-4 text-4xl font-bold text-green-600">
-          🏆 Game Complete!
-        </h1>
-        <h2 className="text-foreground mb-2 text-2xl font-semibold">
-          {winner?.player?.name} Wins!
-        </h2>
-        <p className="text-foreground/70 mb-6 text-lg">
-          Final Score: {winner?.currentPoints} / {game.winningPoints} points
-        </p>
+      <div className="relative">
+        <ConfettiCelebration />
+        <div className="rounded-lg border p-8 text-center shadow-sm">
+          <h1 className="mb-4 text-4xl font-bold text-green-600">
+            🏆 Game Complete!
+          </h1>
+          <h2 className="text-foreground mb-2 text-2xl font-semibold">
+            {winner?.player?.name} Wins!
+          </h2>
+          <p className="text-foreground/70 mb-6 text-lg">
+            Final Score: {winner?.currentPoints} / {game.winningPoints} points
+          </p>
 
-        <div className="rounded-lg p-6">
-          <h3 className="text-foreground mb-4 text-lg font-semibold">
-            Final Standings
-          </h3>
-          <div className="space-y-2">
-            {game.participants
-              .sort((a, b) => b.currentPoints - a.currentPoints)
-              .map((participant, index) => (
-                <div
-                  key={participant.playerId}
-                  className="flex items-center justify-between rounded border p-3"
-                >
-                  <div className="flex items-center space-x-3">
-                    <span className="text-foreground/50 text-lg font-bold">
-                      #{index + 1}
-                    </span>
-                    <span className="font-medium">
-                      {participant.player?.name}
+          <div className="rounded-lg p-6">
+            <h3 className="text-foreground mb-4 text-lg font-semibold">
+              Final Standings
+            </h3>
+            <div className="space-y-2">
+              {game.participants
+                .sort((a, b) => b.currentPoints - a.currentPoints)
+                .map((participant, index) => (
+                  <div
+                    key={participant.playerId}
+                    className="flex items-center justify-between rounded border p-3"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <span className="text-foreground/50 text-lg font-bold">
+                        #{index + 1}
+                      </span>
+                      <span className="font-medium">
+                        {participant.player?.name}
+                      </span>
+                    </div>
+                    <span className="text-lg font-semibold">
+                      {participant.currentPoints} pts
                     </span>
                   </div>
-                  <span className="text-lg font-semibold">
-                    {participant.currentPoints} pts
-                  </span>
-                </div>
-              ))}
-          </div>
-        </div>
-
-        <div className="mt-8 flex flex-col items-center space-y-4">
-          {!game.leagueId && (
-            <div className="text-center">
-              <p className="text-foreground/70 mb-4 text-sm">
-                Want to play again with the same players?
-              </p>
-              <Button
-                onClick={handleNewGameWithSamePlayers}
-                disabled={isCreatingNewGame}
-                size="lg"
-                className="px-8 py-3"
-              >
-                <Play className="mr-2 h-5 w-5" />
-                {isCreatingNewGame
-                  ? 'Creating...'
-                  : 'New Game with Same Players'}
-              </Button>
+                ))}
             </div>
-          )}
-          <Button
-            variant="outline"
-            onClick={() => {
-              if (isLeagueGame && leagueId) {
-                // For league games accessed through league route, go back to league
-                navigate(`/league/${leagueId}`)
-              } else {
-                // For standalone games, go back to games list
-                navigate('/games')
-              }
-            }}
-            size="sm"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            {isLeagueGame ? 'Back to League' : 'Back to Games'}
-          </Button>
+          </div>
+
+          <div className="mt-8 flex flex-col items-center space-y-4">
+            {!game.leagueId && (
+              <div className="text-center">
+                <p className="text-foreground/70 mb-4 text-sm">
+                  Want to play again with the same players?
+                </p>
+                <Button
+                  onClick={handleNewGameWithSamePlayers}
+                  disabled={isCreatingNewGame}
+                  size="lg"
+                  className="px-8 py-3"
+                >
+                  <Play className="mr-2 h-5 w-5" />
+                  {isCreatingNewGame
+                    ? 'Creating...'
+                    : 'New Game with Same Players'}
+                </Button>
+              </div>
+            )}
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (isLeagueGame && leagueId) {
+                  // For league games accessed through league route, go back to league
+                  navigate(`/league/${leagueId}`)
+                } else {
+                  // For standalone games, go back to games list
+                  navigate('/games')
+                }
+              }}
+              size="sm"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              {isLeagueGame ? 'Back to League' : 'Back to Games'}
+            </Button>
+          </div>
         </div>
       </div>
     )
@@ -491,6 +495,13 @@ export function GameView({ gameId, onBack }: GameViewProps) {
                 size="lg"
               >
                 🎯 Skatolled
+              </Button>
+              <Button
+                onClick={() => handleReactionVideo('/pinned.mp4')}
+                variant="outline"
+                size="lg"
+              >
+                📌 Pinned
               </Button>
               {currentVideo}
             </div>
