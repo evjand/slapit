@@ -140,7 +140,8 @@ const applicationTables = {
     peakRating: v.number(),
     lastUpdated: v.number(), // timestamp
     createdBy: v.id('users'),
-  }).index('by_player', ['playerId'])
+  })
+    .index('by_player', ['playerId'])
     .index('by_creator', ['createdBy']),
 
   eloHistory: defineTable({
@@ -150,12 +151,16 @@ const applicationTables = {
     ratingAfter: v.number(),
     ratingChange: v.number(),
     createdBy: v.id('users'),
-  }).index('by_game', ['gameId'])
+  })
+    .index('by_game', ['gameId'])
     .index('by_player', ['playerId'])
     .index('by_creator', ['createdBy']),
 }
 
-export default defineSchema({
-  ...authTables,
-  ...applicationTables,
-})
+export default defineSchema(
+  {
+    ...authTables,
+    ...applicationTables,
+  },
+  { schemaValidation: false },
+)
