@@ -298,18 +298,20 @@ export const completeGame = mutation({
       .filter((q) => q.eq(q.field('isReverted'), false))
       .collect()
 
-    // Calculate ELO changes for all participants
-    const participantIds = participants.map((p) => p.playerId)
-    const eloChanges = await calculateMultiplayerEloChanges(
-      ctx,
-      args.gameId,
-      args.winnerId,
-      participantIds,
-      userId,
-    )
+    // Calculate ELO changes for all participants (only for standalone games, not league games)
+    if (!game.leagueId) {
+      const participantIds = participants.map((p) => p.playerId)
+      const eloChanges = await calculateMultiplayerEloChanges(
+        ctx,
+        args.gameId,
+        args.winnerId,
+        participantIds,
+        userId,
+      )
 
-    // Update ELO ratings
-    await updatePlayerEloRatings(ctx, args.gameId, eloChanges, userId)
+      // Update ELO ratings
+      await updatePlayerEloRatings(ctx, args.gameId, eloChanges, userId)
+    }
 
     // Track analytics for each participant
     for (const participant of participants) {
