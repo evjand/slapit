@@ -247,16 +247,61 @@ export const addParticipantsToGame = mutation({
       existingParticipants.map((p) => p.playerId),
     )
 
+    // Filter out players that are already in the game
+    const newPlayerIds = args.playerIds.filter(
+      (playerId) => !existingPlayerIds.has(playerId),
+    )
+
     // Add new participants (skip if already in game)
-    for (const playerId of args.playerIds) {
-      if (!existingPlayerIds.has(playerId)) {
-        await ctx.db.insert('gameParticipants', {
-          gameId: args.gameId,
-          playerId,
-          currentPoints: 0,
-          isEliminated: false,
-        })
+    for (const playerId of newPlayerIds) {
+      await ctx.db.insert('gameParticipants', {
+        gameId: args.gameId,
+        playerId,
+        currentPoints: 0,
+        isEliminated: false,
+      })
+    }
+
+    // Check if there's an active round and if we can add players immediately
+    if (newPlayerIds.length > 0) {
+      const currentRound = await ctx.db
+        .query('rounds')
+        .withIndex('by_game', (q) => q.eq('gameId', args.gameId))
+        .filter((q) => q.eq(q.field('status'), 'active'))
+        .first()
+
+      if (currentRound) {
+        // Check if any eliminations have happened in this round
+        const eliminations = await ctx.db
+          .query('eliminations')
+          .withIndex('by_round', (q) => q.eq('roundId', currentRound._id))
+          .filter((q) => q.eq(q.field('isReverted'), false))
+          .collect()
+
+        // If no eliminations have happened, add players to the current round immediately
+        if (eliminations.length === 0) {
+          const currentPlayerOrder =
+            currentRound.currentPlayerOrder || currentRound.playerOrder
+          const playerOrder = currentRound.playerOrder
+
+          // Add new players to both playerOrder and currentPlayerOrder
+          const updatedPlayerOrder = [...playerOrder, ...newPlayerIds]
+          const updatedCurrentPlayerOrder = [
+            ...currentPlayerOrder,
+            ...newPlayerIds,
+          ]
+
+          // Update the round with the new players
+          await ctx.db.patch(currentRound._id, {
+            playerOrder: updatedPlayerOrder,
+            currentPlayerOrder: updatedCurrentPlayerOrder,
+          })
+        }
+        // If eliminations have happened, players will be added at the next round
+        // (which is the current behavior - no action needed)
       }
+      // If no active round, players will be added when the next round starts
+      // (which is the current behavior - no action needed)
     }
 
     return { success: true }
