@@ -43,6 +43,7 @@ import {
   Play,
   ArrowLeft,
   UserPlus,
+  UserMinus,
   Tv,
   XCircle,
 } from 'lucide-react'
@@ -68,6 +69,7 @@ export function GameView({ gameId, onBack }: GameViewProps) {
   const setTelevised = useMutation(api.games.setTelevised)
   const unsetTelevised = useMutation(api.games.unsetTelevised)
   const cancelGame = useMutation(api.games.cancelGame)
+  const removeParticipantFromGame = useMutation(api.games.removeParticipantFromGame)
 
   const [isFocusMode, setIsFocusMode] = useState(false)
   const [isCreatingNewGame, setIsCreatingNewGame] = useState(false)
@@ -77,6 +79,9 @@ export function GameView({ gameId, onBack }: GameViewProps) {
   const [playerToEliminate, setPlayerToEliminate] =
     useState<Id<'players'> | null>(null)
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
+  const [showRemovePlayerConfirm, setShowRemovePlayerConfirm] = useState(false)
+  const [playerToRemove, setPlayerToRemove] =
+    useState<Id<'players'> | null>(null)
   const navigate = useNavigate()
 
   // Auto-start next round when current round is completed
@@ -233,6 +238,29 @@ export function GameView({ gameId, onBack }: GameViewProps) {
       }
     } catch (error) {
       toast.error('Failed to cancel game')
+    }
+  }
+
+  const handleRemovePlayer = (playerId: Id<'players'>) => {
+    setPlayerToRemove(playerId)
+    setShowRemovePlayerConfirm(true)
+  }
+
+  const handleConfirmRemovePlayer = async () => {
+    if (!playerToRemove) return
+
+    try {
+      await removeParticipantFromGame({
+        gameId,
+        playerId: playerToRemove,
+      })
+      toast.success('Player removed from game')
+      setShowRemovePlayerConfirm(false)
+      setPlayerToRemove(null)
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to remove player from game')
+      setShowRemovePlayerConfirm(false)
+      setPlayerToRemove(null)
     }
   }
 
@@ -959,6 +987,9 @@ export function GameView({ gameId, onBack }: GameViewProps) {
                 <TableRow>
                   <TableHead align="right">Player</TableHead>
                   <TableHead>Points</TableHead>
+                  {game.status === 'active' && (
+                    <TableHead className="w-[100px]">Actions</TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -967,11 +998,33 @@ export function GameView({ gameId, onBack }: GameViewProps) {
                   .map((participant) => (
                     <TableRow key={participant.playerId}>
                       <TableCell className="font-semibold" align="right">
-                        {participant.player?.name}
+                        <div className="flex items-center justify-end gap-2">
+                          {participant.isEliminated && (
+                            <Badge variant="secondary" className="text-xs">
+                              Out
+                            </Badge>
+                          )}
+                          <span>{participant.player?.name}</span>
+                        </div>
                       </TableCell>
                       <TableCell className="text-primary pr-1 pl-2 font-bold">
                         {participant.currentPoints}
                       </TableCell>
+                      {game.status === 'active' && (
+                        <TableCell>
+                          {!participant.isEliminated && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemovePlayer(participant.playerId)}
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              title="Remove player from game"
+                            >
+                              <UserMinus className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
               </TableBody>
@@ -1086,6 +1139,86 @@ export function GameView({ gameId, onBack }: GameViewProps) {
               className="bg-orange-600 hover:bg-orange-700"
             >
               Cancel Game
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Remove Player Confirmation Dialog */}
+      <AlertDialog
+        open={showRemovePlayerConfirm}
+        onOpenChange={setShowRemovePlayerConfirm}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Player</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove this player from the game?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {playerToRemove && (
+            <div className="flex items-center justify-center py-4">
+              <div className="flex flex-col items-center space-y-2">
+                <SimpleUserAvatar
+                  userId={playerToRemove}
+                  name={
+                    game?.participants.find(
+                      (p) => p.playerId === playerToRemove,
+                    )?.player?.name || 'Unknown Player'
+                  }
+                  imageStorageId={
+                    game?.participants.find(
+                      (p) => p.playerId === playerToRemove,
+                    )?.player?.imageStorageId
+                  }
+                  initials={
+                    game?.participants.find(
+                      (p) => p.playerId === playerToRemove,
+                    )?.player?.initials
+                  }
+                  size="2xl"
+                />
+                <div className="text-center">
+                  <p className="text-lg font-semibold">
+                    {game?.participants.find(
+                      (p) => p.playerId === playerToRemove,
+                    )?.player?.name || 'Unknown Player'}
+                  </p>
+                  <p className="text-muted-foreground text-sm">
+                    Will be removed from the game
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          <AlertDialogDescription className="text-center">
+            {currentRound &&
+            currentRound.status === 'active' &&
+            currentRound.currentPlayerOrder?.includes(playerToRemove || '') ? (
+              <div className="rounded-lg bg-yellow-50 p-4 dark:bg-yellow-950">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  ⚠️ This player is in the current round. They will be removed
+                  immediately if no eliminations have occurred yet.
+                </p>
+              </div>
+            ) : (
+              'This action cannot be undone.'
+            )}
+          </AlertDialogDescription>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setShowRemovePlayerConfirm(false)
+                setPlayerToRemove(null)
+              }}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmRemovePlayer}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remove Player
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

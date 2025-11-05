@@ -308,6 +308,115 @@ export const addParticipantsToGame = mutation({
   },
 })
 
+export const removeParticipantFromGame = mutation({
+  args: {
+    gameId: v.id('games'),
+    playerId: v.id('players'),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) {
+      throw new Error('Must be logged in to modify games')
+    }
+
+    const game = await ctx.db.get(args.gameId)
+    if (!game) {
+      throw new Error('Game not found')
+    }
+
+    if (game.createdBy !== userId) {
+      throw new Error('Not authorized to modify this game')
+    }
+
+    if (game.status !== 'active') {
+      throw new Error('Can only remove players from active games')
+    }
+
+    // Get the participant to remove
+    const participant = await ctx.db
+      .query('gameParticipants')
+      .withIndex('by_game', (q) => q.eq('gameId', args.gameId))
+      .filter((q) => q.eq(q.field('playerId'), args.playerId))
+      .first()
+
+    if (!participant) {
+      throw new Error('Player is not in this game')
+    }
+
+    // Get all active participants (not eliminated)
+    const activeParticipants = await ctx.db
+      .query('gameParticipants')
+      .withIndex('by_game', (q) => q.eq('gameId', args.gameId))
+      .filter((q) => q.eq(q.field('isEliminated'), false))
+      .collect()
+
+    // Can't remove if it's the last active participant
+    if (activeParticipants.length <= 1) {
+      throw new Error('Cannot remove the last active player from the game')
+    }
+
+    // Check if there's an active round
+    const currentRound = await ctx.db
+      .query('rounds')
+      .withIndex('by_game', (q) => q.eq('gameId', args.gameId))
+      .filter((q) => q.eq(q.field('status'), 'active'))
+      .first()
+
+    if (currentRound) {
+      // Check if any eliminations have happened in this round
+      const eliminations = await ctx.db
+        .query('eliminations')
+        .withIndex('by_round', (q) => q.eq('roundId', currentRound._id))
+        .filter((q) => q.eq(q.field('isReverted'), false))
+        .collect()
+
+      // If no eliminations have happened, remove player from the current round immediately
+      if (eliminations.length === 0) {
+        const currentPlayerOrder =
+          currentRound.currentPlayerOrder || currentRound.playerOrder
+        const playerOrder = currentRound.playerOrder
+
+        // Check if player is in the round
+        const isInRound = currentPlayerOrder.includes(args.playerId)
+
+        if (isInRound) {
+          // Remove player from both playerOrder and currentPlayerOrder
+          const updatedPlayerOrder = playerOrder.filter(
+            (id) => id !== args.playerId,
+          )
+          const updatedCurrentPlayerOrder = currentPlayerOrder.filter(
+            (id) => id !== args.playerId,
+          )
+
+          // If this was the server, we need to pick a new server
+          let newServerId = currentRound.serverId
+          if (currentRound.serverId === args.playerId) {
+            if (updatedCurrentPlayerOrder.length > 0) {
+              newServerId = updatedCurrentPlayerOrder[0]
+            }
+          }
+
+          // Update the round with the removed player
+          await ctx.db.patch(currentRound._id, {
+            playerOrder: updatedPlayerOrder,
+            currentPlayerOrder: updatedCurrentPlayerOrder,
+            serverId: newServerId,
+          })
+        }
+      }
+      // If eliminations have happened, we'll just mark them as eliminated from the game
+      // (they're already out of the round)
+    }
+
+    // Mark participant as eliminated from the game
+    await ctx.db.patch(participant._id, {
+      isEliminated: true,
+    })
+
+    return { success: true }
+  },
+})
+
 export const completeGame = mutation({
   args: {
     gameId: v.id('games'),
