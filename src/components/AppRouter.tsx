@@ -48,17 +48,16 @@ function RouterContent() {
       </Authenticated>
 
       <Unauthenticated>
-        <div className="flex min-h-[400px] flex-col items-center justify-center space-y-6">
+        <div className="flex min-h-[400px] flex-col items-center justify-center space-y-6 py-32">
           <div className="text-center">
             <h2 className="text-primary text-3xl font-extrabold italic">
               <span className="text-black dark:text-white">SLAP</span>
               <span className="text-primary">IT</span>
             </h2>
           </div>
-          <SignInForm />
-          <div className="mx-auto max-w-md">
-            {(import.meta.env.NODE_ENV === 'development' ||
-              import.meta.env.VITE_VERCEL_ENV === 'preview') && <SignUpForm />}
+          <div className="container grid grid-cols-2 gap-8">
+            <SignInForm />
+            <SignUpForm />
           </div>
         </div>
       </Unauthenticated>

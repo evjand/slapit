@@ -60,7 +60,7 @@ export function AddPlayersToGame({
 
   if (availablePlayers.length === 0) {
     return (
-      <Card className="w-full max-w-md">
+      <Card className="flex max-h-[80vh] w-full max-w-md flex-col">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             Add Players
@@ -79,8 +79,8 @@ export function AddPlayersToGame({
   }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
+    <Card className="flex max-h-[80vh] w-full max-w-md flex-col">
+      <CardHeader className="flex-shrink-0">
         <CardTitle className="flex items-center justify-between">
           Add Players to Game
           <Button variant="ghost" size="sm" onClick={onClose}>
@@ -88,8 +88,8 @@ export function AddPlayersToGame({
           </Button>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
+      <CardContent className="flex min-h-0 flex-1 flex-col space-y-4">
+        <div className="flex-1 space-y-2 overflow-y-auto">
           {availablePlayers.map((player) => (
             <div
               key={player._id}
@@ -117,7 +117,7 @@ export function AddPlayersToGame({
           ))}
         </div>
 
-        <div className="flex space-x-2">
+        <div className="flex flex-shrink-0 space-x-2">
           <Button
             onClick={handleAddPlayers}
             disabled={isAdding || selectedPlayerIds.length === 0}

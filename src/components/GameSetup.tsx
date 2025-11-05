@@ -66,7 +66,7 @@ export function GameSetup({ onGameCreated }: GameSetupProps) {
   return (
     <div className="space-y-6">
       {/* Create New Game */}
-      <div className="bg-card rounded-lg border p-6 shadow-sm">
+      <div className="bg-card container rounded-lg border p-6 shadow-sm">
         <h2 className="text-foreground mb-4 text-2xl font-bold">
           Create New Game
         </h2>

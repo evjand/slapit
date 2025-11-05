@@ -23,7 +23,6 @@ export function SignInForm() {
             setSubmitting(true)
             const formData = new FormData(e.target as HTMLFormElement)
             formData.set('flow', 'signIn')
-            formData.set('email', 'login@slapit.no')
             void signIn('password', formData).catch((error) => {
               let toastTitle = ''
               if (error.message.includes('Invalid password')) {
@@ -36,6 +35,13 @@ export function SignInForm() {
             })
           }}
         >
+          <Input
+            className="auth-input-field"
+            type="email"
+            name="email"
+            placeholder="Email"
+            required
+          />
           <Input
             className="auth-input-field"
             type="password"
