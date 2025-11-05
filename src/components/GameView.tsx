@@ -746,6 +746,17 @@ export function GameView({ gameId, onBack }: GameViewProps) {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Add Players Dialog */}
+        {showAddPlayers && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50">
+            <AddPlayersToGame
+              gameId={gameId}
+              currentPlayerIds={game.participants.map((p) => p.playerId)}
+              onClose={() => setShowAddPlayers(false)}
+            />
+          </div>
+        )}
       </div>
     )
   }
