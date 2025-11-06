@@ -51,18 +51,6 @@ export function TelevisedView() {
         className="bg-accent relative w-full"
         style={{ aspectRatio: '10/1' }}
       >
-        {/* Header */}
-        <div className="absolute top-4 right-4 left-4 z-10">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">{televisedGame.name}</h1>
-              <p className="mt-1 text-lg text-gray-400">
-                Round {currentRound.roundNumber}
-              </p>
-            </div>
-          </div>
-        </div>
-
         {/* Players Display - Custom player cards matching focus view */}
         <div className="flex h-full items-center justify-center px-8">
           <div className="flex items-center space-x-6">
@@ -109,20 +97,6 @@ export function TelevisedView() {
                 </div>
               )
             })}
-          </div>
-        </div>
-
-        {/* Footer with game info */}
-        <div className="absolute right-4 bottom-4 left-4 z-10">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-400">
-              {televisedGame.gameMode === 'firstToX'
-                ? `First to ${televisedGame.winningPoints} points`
-                : `${televisedGame.setsPerGame} sets per game`}
-            </div>
-            <div className="text-sm text-gray-400">
-              {participants.length} players
-            </div>
           </div>
         </div>
       </div>
